@@ -4190,6 +4190,7 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	// =e
 	struct sched_entity *parent_se = se->real_parent;
 	//
+	printk(KERN_INFO "enqueue_task_fair\n");
 
 	for_each_sched_entity(se) {
 		if (se->on_rq)
@@ -4199,8 +4200,14 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 
 		// =e
 		if(parent_se){
+			printk(KERN_INFO "enqueue_task_fair ****(*****1)\n");
+
 			parent_se->children_size++;
+			printk(KERN_INFO "enqueue_task_fair ****(*****)2 %d %d\n", task_of(se)->pid, task_of(parent_se)->pid);
+
 			list_add_tail(&se->node, &parent_se->children);
+			printk(KERN_INFO "enqueue_task_fair ****(*****)3\n");
+
 		}
 		else {
 			printk(KERN_INFO "enqueue_task_fair: pid: %d has no parent\n", p->pid);
@@ -4246,6 +4253,8 @@ static void set_next_buddy(struct sched_entity *se);
  */
 static void dequeue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 {
+	printk(KERN_INFO "dequeue_task_fair\n");
+
 	struct cfs_rq *cfs_rq;
 	struct sched_entity *se = &p->se;
 	// =e
@@ -5302,6 +5311,8 @@ pick_fifo_next_task_fair(struct sched_entity * se, struct sched_entity * fifo_se
 static struct task_struct *
 pick_next_task_fair(struct rq *rq, struct task_struct *prev)
 {
+	printk(KERN_INFO "pick_next_task_fair\n");
+
 	struct cfs_rq *cfs_rq = &rq->cfs;
 	struct sched_entity *se;
 	struct task_struct *p;
@@ -5585,7 +5596,7 @@ static bool yield_to_task_fair(struct rq *rq, struct task_struct *p, bool preemp
  *
  * The adjacency matrix of the resulting graph is given by:
  *
- *             log_2 n     
+ *             log_2 n
  *   A_i,j = \Union     (i % 2^k == 0) && i / 2^(k+1) == j / 2^(k+1)  (6)
  *             k = 0
  *
@@ -5631,7 +5642,7 @@ static bool yield_to_task_fair(struct rq *rq, struct task_struct *p, bool preemp
  *
  * [XXX write more on how we solve this.. _after_ merging pjt's patches that
  *      rewrite all of this once again.]
- */ 
+ */
 
 static unsigned long __read_mostly max_load_balance_interval = HZ/10;
 
@@ -6293,7 +6304,7 @@ void update_group_capacity(struct sched_domain *sd, int cpu)
 		/*
 		 * !SD_OVERLAP domains can assume that child groups
 		 * span the current group.
-		 */ 
+		 */
 
 		group = child->groups;
 		do {
@@ -8016,6 +8027,8 @@ static void task_tick_fair(struct rq *rq, struct task_struct *curr, int queued)
  */
 static void task_fork_fair(struct task_struct *p)
 {
+	printk(KERN_INFO "task_fork_fair\n");
+
 	struct cfs_rq *cfs_rq;
 	struct sched_entity *se = &p->se, *curr;
 	int this_cpu = smp_processor_id();
@@ -8028,6 +8041,7 @@ static void task_fork_fair(struct task_struct *p)
 	else
 		printk(KERN_INFO "task_fork_fair: se.pid: %d has no real parent\n", p->pid);
 	if(!se->head_initialized){
+		printk(KERN_INFO "task_fork_fair head not initialized %d %d %d\n", se->head_initialized, p->pid, task_of(se)->pid);
 		INIT_LIST_HEAD(&se->children);
 		se->head_initialized = 1;
 		se->children_size = 0;
