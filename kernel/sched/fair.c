@@ -4197,6 +4197,8 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 			break;
 		cfs_rq = cfs_rq_of(se);
 		enqueue_entity(cfs_rq, se, flags);
+		//aghax
+		se->rank = rq->rq_rank++;
 
 		// =e
 		if(parent_se){
