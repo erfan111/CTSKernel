@@ -4190,7 +4190,7 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	// =e
 	struct sched_entity *parent_se = se->real_parent;
 	//
-	printk(KERN_INFO "enqueue_task_fair\n");
+//	printk(KERN_INFO "enqueue_task_fair\n");
 
 	for_each_sched_entity(se) {
 		if (se->on_rq)
@@ -4200,17 +4200,17 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 
 		// =e
 		if(parent_se){
-			printk(KERN_INFO "enqueue_task_fair ****(*****1)\n");
+//			printk(KERN_INFO "enqueue_task_fair ****(*****1)\n");
 
 			parent_se->children_size++;
-			printk(KERN_INFO "enqueue_task_fair ****(*****)2 %d %d\n", task_of(se)->pid, task_of(parent_se)->pid);
+//			printk(KERN_INFO "enqueue_task_fair ****(*****)2 %d %d\n", task_of(se)->pid, task_of(parent_se)->pid);
 
 			list_add_tail(&se->node, &parent_se->children);
-			printk(KERN_INFO "enqueue_task_fair ****(*****)3\n");
+//			printk(KERN_INFO "enqueue_task_fair ****(*****)3\n");
 
 		}
 		else {
-			printk(KERN_INFO "enqueue_task_fair: pid: %d has no parent\n", p->pid);
+//			printk(KERN_INFO "enqueue_task_fair: pid: %d has no parent\n", p->pid);
 		}
 		//
 
@@ -4253,7 +4253,7 @@ static void set_next_buddy(struct sched_entity *se);
  */
 static void dequeue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 {
-	printk(KERN_INFO "dequeue_task_fair\n");
+//	printk(KERN_INFO "dequeue_task_fair\n");
 
 	struct cfs_rq *cfs_rq;
 	struct sched_entity *se = &p->se;
@@ -5300,18 +5300,18 @@ pick_fifo_next_task_fair(struct sched_entity * se, struct sched_entity * fifo_se
 			swap(fifo_selected_se->vruntime, se->vruntime);
 		}
 		else{
-			printk("pick_next_task_fair: error fifo selected_se is not available pid:%d\n", task_of(se)->pid);
+//			printk("pick_next_task_fair: error fifo selected_se is not available pid:%d\n", task_of(se)->pid);
 		}
 	}
 	else{
-		printk("pick_next_task_fair: no parent_se pid:%d\n", task_of(se)->pid);
+//		printk("pick_next_task_fair: no parent_se pid:%d\n", task_of(se)->pid);
 	}
 }
 
 static struct task_struct *
 pick_next_task_fair(struct rq *rq, struct task_struct *prev)
 {
-	printk(KERN_INFO "pick_next_task_fair\n");
+//	printk(KERN_INFO "pick_next_task_fair\n");
 
 	struct cfs_rq *cfs_rq = &rq->cfs;
 	struct sched_entity *se;
@@ -8027,7 +8027,7 @@ static void task_tick_fair(struct rq *rq, struct task_struct *curr, int queued)
  */
 static void task_fork_fair(struct task_struct *p)
 {
-	printk(KERN_INFO "task_fork_fair\n");
+//	printk(KERN_INFO "task_fork_fair\n");
 
 	struct cfs_rq *cfs_rq;
 	struct sched_entity *se = &p->se, *curr;
@@ -8036,16 +8036,14 @@ static void task_fork_fair(struct task_struct *p)
 	unsigned long flags;
 
 	// =e
-	if(p->real_parent)
-		se->real_parent = &p->real_parent->se;
-	else
-		printk(KERN_INFO "task_fork_fair: se.pid: %d has no real parent\n", p->pid);
-	if(!se->head_initialized){
-		printk(KERN_INFO "task_fork_fair head not initialized %d %d %d\n", se->head_initialized, p->pid, task_of(se)->pid);
-		INIT_LIST_HEAD(&se->children);
-		se->head_initialized = 1;
-		se->children_size = 0;
-	}
+//	if(p->real_parent)
+//		se->real_parent = &p->real_parent->se;
+//	else
+//		printk(KERN_INFO "task_fork_fair: se.pid: %d has no real parent\n", p->pid);
+//	if(!se->head_initialized){
+//		printk(KERN_INFO "task_fork_fair head not initialized %d %d %d\n", se->head_initialized, p->pid, task_of(se)->pid);
+//
+//	}
 	//
 
 	raw_spin_lock_irqsave(&rq->lock, flags);

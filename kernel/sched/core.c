@@ -2133,6 +2133,14 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 	p->se.nr_migrations		= 0;
 	p->se.vruntime			= 0;
 	INIT_LIST_HEAD(&p->se.group_node);
+	// =e
+	printk(KERN_INFO " __sched_fork\n");
+	INIT_LIST_HEAD(&p->se.children);
+	p->se.head_initialized = 1;
+	p->se.children_size = 0;
+	p->se.real_parent = &p->real_parent->se;
+	printk(KERN_INFO " __sched_fork done\n");
+	//
 
 #ifdef CONFIG_SCHEDSTATS
 	memset(&p->se.statistics, 0, sizeof(p->se.statistics));
