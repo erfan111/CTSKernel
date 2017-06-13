@@ -259,6 +259,7 @@ static inline struct task_struct *task_of(struct sched_entity *se)
 #ifdef CONFIG_SCHED_DEBUG
 	WARN_ON_ONCE(!entity_is_task(se));
 #endif
+
 	return container_of(se, struct task_struct, se);
 }
 
@@ -4201,8 +4202,8 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 		se->rank = rq->rq_rank++;
 
 		// =e
-		if(parent_se){
-//			printk(KERN_INFO "enqueue_task_fair ****(*****1)\n");
+		if(parent_se && entity_is_task(se)){
+			//printk(KERN_INFO "enqueue_task_fair ****(*****1)\n");
 
 			parent_se->children_size++;
 //			printk(KERN_INFO "enqueue_task_fair ****(*****)2 %d %d\n", task_of(se)->pid, task_of(parent_se)->pid);
@@ -5289,26 +5290,25 @@ preempt:
 		set_last_buddy(se);
 }
 
-void
-pick_fifo_next_task_fair(struct sched_entity * se, struct sched_entity * fifo_selected_se)
-{
-	struct sched_entity * parent_se;
-
-	parent_se = se->real_parent;
-	if(parent_se){
-		fifo_selected_se = list_first_entry(&parent_se->children, struct sched_entity, node);
-		if(fifo_selected_se){
-			//p = taskof(fifo_selected_se);
-			swap(fifo_selected_se->vruntime, se->vruntime);
-		}
-		else{
-//			printk("pick_next_task_fair: error fifo selected_se is not available pid:%d\n", task_of(se)->pid);
-		}
-	}
-	else{
-//		printk("pick_next_task_fair: no parent_se pid:%d\n", task_of(se)->pid);
-	}
-}
+// void
+// pick_fifo_next_task_fair(struct sched_entity * se, struct sched_entity * fifo_selected_se)
+// {
+// 	struct sched_entity * parent_se = NULL;
+//
+// 	parent_se = se->real_parent;
+// 	if(parent_se){
+// 		fifo_selected_se = list_first_entry(&parent_se->children, struct sched_entity, node);
+// 		if(fifo_selected_se){
+// 			swap(fifo_selected_se->vruntime, se->vruntime);
+// 		}
+// 		else{
+// 			printk("pick_next_task_fair: error fifo selected_se is not available pid:%d\n", task_of(se)->pid);
+// 		}
+// 	}
+// 	else{
+// 		printk("pick_next_task_fair: no parent_se pid:%d\n", task_of(se)->pid);
+// 	}
+// }
 
 static struct task_struct *
 pick_next_task_fair(struct rq *rq, struct task_struct *prev)
@@ -5320,17 +5320,20 @@ pick_next_task_fair(struct rq *rq, struct task_struct *prev)
 	struct task_struct *p;
 	// =e
 	struct sched_entity * fifo_selected_se = NULL;
+	struct sched_entity * parent_se;
 	//
 	int new_tasks;
 
 again:
 #ifdef CONFIG_FAIR_GROUP_SCHED
+	//aghax
+	//goto simple;
+	//
 	if (!cfs_rq->nr_running)
 		goto idle;
 
 	if (prev->sched_class != &fair_sched_class)
 		goto simple;
-
 	/*
 	 * Because of the set_next_buddy() in dequeue_task_fair() it is rather
 	 * likely that a next task is from the same cgroup as the current.
@@ -5370,15 +5373,29 @@ again:
 
 
 	// =e
-	pick_fifo_next_task_fair(se, fifo_selected_se);
+	//pick_fifo_next_task_fair(se, fifo_selected_se);
+	parent_se = se->real_parent;
+	if(parent_se){
+		fifo_selected_se = list_first_entry(&parent_se->children, struct sched_entity, node);
+		if(fifo_selected_se){
+			swap(fifo_selected_se->vruntime, se->vruntime);
+		}
+		else{
+			printk("F pick_next_task_fair: error fifo selected_se is not available pid:%d\n", task_of(se)->pid);
+		}
+	}
+	else{
+		printk("F pick_next_task_fair: no parent_se pid:%d\n", task_of(se)->pid);
+	}
 
 	if(fifo_selected_se){
-//		p_cfs = task_of(se);
-//		p_fifo = task_of(fifo_selected_se);
+		// printk(KERN_INFO "FIFO DECISION f\n");
 		se = fifo_selected_se;
 	}
 
 	p = task_of(se);
+	//printk(KERN_INFO "TASK FIFO DECISION f task of %d\n", p->pid);
+
 	//
 
 	/*
@@ -5386,6 +5403,7 @@ again:
 	 * is a different task than we started out with, try and touch the
 	 * least amount of cfs_rqs.
 	 */
+
 	if (prev != p) {
 		struct sched_entity *pse = &prev->se;
 
@@ -5410,6 +5428,7 @@ again:
 	if (hrtick_enabled(rq))
 		hrtick_start_fair(rq, p);
 
+
 	return p;
 simple:
 	cfs_rq = &rq->cfs;
@@ -5423,9 +5442,25 @@ simple:
 	do {
 		se = pick_next_entity(cfs_rq, NULL);
 		// =e
-		pick_fifo_next_task_fair(se, fifo_selected_se);
+		//pick_fifo_next_task_fair(se, fifo_selected_se);
+
+		parent_se = se->real_parent;
+		if(parent_se){
+			fifo_selected_se = list_first_entry(&parent_se->children, struct sched_entity, node);
+			if(fifo_selected_se){
+				swap(fifo_selected_se->vruntime, se->vruntime);
+			}
+			else{
+				printk("S pick_next_task_fair: error fifo selected_se is not available pid:%d\n", task_of(se)->pid);
+			}
+		}
+		else{
+			printk("S pick_next_task_fair: no parent_se pid:%d\n", task_of(se)->pid);
+		}
 
 		if(fifo_selected_se){
+			//printk(KERN_INFO "FIFO DECISION s\n");
+
 			se = fifo_selected_se;
 		}
 		//

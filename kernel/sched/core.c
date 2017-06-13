@@ -2139,12 +2139,10 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 	p->se.vruntime			= 0;
 	INIT_LIST_HEAD(&p->se.group_node);
 	// =e
-//	printk(KERN_INFO " __sched_fork\n");
 	INIT_LIST_HEAD(&p->se.children);
 	p->se.head_initialized = 1;
 	p->se.children_size = 0;
 	p->se.real_parent = &p->real_parent->se;
-//	printk(KERN_INFO " __sched_fork done\n");
 	//
 
 #ifdef CONFIG_SCHEDSTATS
@@ -3083,7 +3081,6 @@ pick_next_task(struct rq *rq, struct task_struct *prev)
 		/* assumes fair_sched_class->next == idle_sched_class */
 		if (unlikely(!p))
 			p = idle_sched_class.pick_next_task(rq, prev);
-
 		return p;
 	}
 
@@ -3216,28 +3213,27 @@ static void __sched notrace __schedule(bool preempt)
 		++*switch_count;
 
 		trace_sched_switch(preempt, prev, next);
+
 		rq = context_switch(rq, prev, next); /* unlocks the rq */
 
 
 		// aghax
-		//set_tasks_order();
-		if(cpu == 0)
-		{
-			if(loop_counter > loop_limit)
-			{
-				//printk(KERN_INFO "aghax");
-				printk(KERN_INFO "batch_report_start\n");
-				for(loop_counter = 0; loop_counter < loop_limit; loop_counter++)
-					printk(KERN_INFO "%d\n", FCFS[loop_counter]);
-				printk(KERN_INFO "batch_report_end\n");
-				loop_counter = 0;
-			}
-			if(next->pid > 0)
-			{
-				FCFS[loop_counter] = next->se.rank;//loop_counter;
-				loop_counter++;
-			}
-		}
+		// if(cpu == 0)
+		// {
+		// 	if(loop_counter > loop_limit)
+		// 	{
+		// 		printk(KERN_INFO "batch_report_start\n");
+		// 		for(loop_counter = 0; loop_counter < loop_limit; loop_counter++)
+		// 			printk(KERN_INFO "%d\n", FCFS[loop_counter]);
+		// 		printk(KERN_INFO "batch_report_end\n");
+		// 		loop_counter = 0;
+		// 	}
+		// 	if(next->pid > 0)
+		// 	{
+		// 		FCFS[loop_counter] = next->se.rank;//loop_counter;
+		// 		loop_counter++;
+		// 	}
+		// }
 
 
 		cpu = cpu_of(rq);
@@ -3247,6 +3243,7 @@ static void __sched notrace __schedule(bool preempt)
 	}
 
 	balance_callback(rq);
+
 }
 
 static inline void sched_submit_work(struct task_struct *tsk)
