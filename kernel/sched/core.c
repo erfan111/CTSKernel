@@ -7487,7 +7487,7 @@ void __init sched_init(void)
 	for_each_possible_cpu(i) {
 		struct rq *rq;
 		// aghax
-		rq->rq_rank = 0;
+		//rq->rq_rank = 0;
 
 		rq = cpu_rq(i);
 		raw_spin_lock_init(&rq->lock);
