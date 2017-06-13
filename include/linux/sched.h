@@ -1244,6 +1244,7 @@ struct sched_statistics {
 #endif
 
 struct sched_entity {
+	int rank; 						/* aghax for some sort of ordering */
 	struct load_weight	load;		/* for load-balancing */
 	struct rb_node		run_node;
 	struct list_head	group_node;

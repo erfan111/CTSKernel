@@ -560,6 +560,9 @@ struct rq {
 	/* runqueue lock: */
 	raw_spinlock_t lock;
 
+	/* aghax it is for figuring out the ordering of tasks insert into the cfs_rq */
+	int rq_rank;
+
 	/*
 	 * nr_running and cpu_load should be in the same cacheline because
 	 * remote CPUs use both these fields when doing load calculation.

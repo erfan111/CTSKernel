@@ -93,6 +93,11 @@
 DEFINE_MUTEX(sched_domains_mutex);
 DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
 
+//aghax
+#define loop_limit 1000
+int loop_counter;
+int FCFS[loop_limit];
+
 static void update_rq_clock_task(struct rq *rq, s64 delta);
 
 void update_rq_clock(struct rq *rq)
@@ -2134,12 +2139,12 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 	p->se.vruntime			= 0;
 	INIT_LIST_HEAD(&p->se.group_node);
 	// =e
-	printk(KERN_INFO " __sched_fork\n");
+//	printk(KERN_INFO " __sched_fork\n");
 	INIT_LIST_HEAD(&p->se.children);
 	p->se.head_initialized = 1;
 	p->se.children_size = 0;
 	p->se.real_parent = &p->real_parent->se;
-	printk(KERN_INFO " __sched_fork done\n");
+//	printk(KERN_INFO " __sched_fork done\n");
 	//
 
 #ifdef CONFIG_SCHEDSTATS
@@ -3212,6 +3217,29 @@ static void __sched notrace __schedule(bool preempt)
 
 		trace_sched_switch(preempt, prev, next);
 		rq = context_switch(rq, prev, next); /* unlocks the rq */
+
+
+		// aghax
+		//set_tasks_order();
+		if(cpu == 0)
+		{
+			if(loop_counter > loop_limit)
+			{
+				//printk(KERN_INFO "aghax");
+				printk(KERN_INFO "batch_report_start\n");
+				for(loop_counter = 0; loop_counter < loop_limit; loop_counter++)
+					printk(KERN_INFO "%d\n", FCFS[loop_counter]);
+				printk(KERN_INFO "batch_report_end\n");
+				loop_counter = 0;
+			}
+			if(next->pid > 0)
+			{
+				FCFS[loop_counter] = next->se.rank;//loop_counter;
+				loop_counter++;
+			}
+		}
+
+
 		cpu = cpu_of(rq);
 	} else {
 		lockdep_unpin_lock(&rq->lock);
@@ -7458,6 +7486,8 @@ void __init sched_init(void)
 
 	for_each_possible_cpu(i) {
 		struct rq *rq;
+		// aghax
+		rq->rq_rank = 0;
 
 		rq = cpu_rq(i);
 		raw_spin_lock_init(&rq->lock);

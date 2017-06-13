@@ -5370,8 +5370,11 @@ again:
 	// =e
 	pick_fifo_next_task_fair(se, fifo_selected_se);
 
-	if(fifo_selected_se)
+	if(fifo_selected_se){
+//		p_cfs = task_of(se);
+//		p_fifo = task_of(fifo_selected_se);
 		se = fifo_selected_se;
+	}
 
 	p = task_of(se);
 	//
@@ -5470,6 +5473,8 @@ static void put_prev_task_fair(struct rq *rq, struct task_struct *prev)
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
 		put_prev_entity(cfs_rq, se);
+		// aghax
+		se->rank = rq->rq_rank++;
 	}
 }
 
