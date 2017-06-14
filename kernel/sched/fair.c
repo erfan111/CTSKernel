@@ -4190,8 +4190,16 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	struct sched_entity *se = &p->se;
 	// =e
 	struct sched_entity *parent_se = se->real_parent;
+
+	if(parent_se && entity_is_task(se) && !se->on_rq){
+		//printk(KERN_INFO "enqueue_task_fair ****(*****1)\n");
+		parent_se->children_size++;
+//			printk(KERN_INFO "enqueue_task_fair ****(*****)2 %d %d\n", task_of(se)->pid, task_of(parent_se)->pid);
+		list_add_tail(&se->node, &parent_se->children);
+//			printk(KERN_INFO "enqueue_task_fair ****(*****)3\n");
+	}
 	//
-//	printk(KERN_INFO "enqueue_task_fair\n");
+
 
 	for_each_sched_entity(se) {
 		if (se->on_rq)
@@ -4200,22 +4208,6 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 		enqueue_entity(cfs_rq, se, flags);
 		//aghax
 		se->rank = rq->rq_rank++;
-
-		// =e
-		if(parent_se && entity_is_task(se)){
-			//printk(KERN_INFO "enqueue_task_fair ****(*****1)\n");
-
-			parent_se->children_size++;
-//			printk(KERN_INFO "enqueue_task_fair ****(*****)2 %d %d\n", task_of(se)->pid, task_of(parent_se)->pid);
-
-			list_add_tail(&se->node, &parent_se->children);
-//			printk(KERN_INFO "enqueue_task_fair ****(*****)3\n");
-
-		}
-		else {
-//			printk(KERN_INFO "enqueue_task_fair: pid: %d has no parent\n", p->pid);
-		}
-		//
 
 		/*
 		 * end evaluation on encountering a throttled cfs_rq
@@ -4262,24 +4254,17 @@ static void dequeue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	struct sched_entity *se = &p->se;
 	// =e
 	struct sched_entity *parent_se;
+	parent_se = se->real_parent;
+	if(parent_se){
+		list_del(&se->node);
+		parent_se->children_size--;
+	}
 	//
 	int task_sleep = flags & DEQUEUE_SLEEP;
 
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
 		dequeue_entity(cfs_rq, se, flags);
-
-
-		// =e
-
-		parent_se = se->real_parent;
-		if(parent_se){
-			list_del(&se->node);
-			parent_se->children_size--;
-		}
-
-
-		//
 
 
 		/*
@@ -5368,33 +5353,36 @@ again:
 		}
 
 		se = pick_next_entity(cfs_rq, curr);
+//		printk(KERN_INFO "do while cfs\n");
+
 		cfs_rq = group_cfs_rq(se);
+//		printk(KERN_INFO "group_cfs_rq\n");
+
 	} while (cfs_rq);
 
+//	printk(KERN_INFO "cfs chose our turn\n");
 
 	// =e
 	//pick_fifo_next_task_fair(se, fifo_selected_se);
+	if(!se)
+		printk(KERN_INFO "SE IS NULLLLLLLLLLL\n");
+
 	parent_se = se->real_parent;
-	if(parent_se){
+	if(parent_se && parent_se->children_size){
 		fifo_selected_se = list_first_entry(&parent_se->children, struct sched_entity, node);
 		if(fifo_selected_se){
 			swap(fifo_selected_se->vruntime, se->vruntime);
 		}
-		else{
-			printk("F pick_next_task_fair: error fifo selected_se is not available pid:%d\n", task_of(se)->pid);
-		}
-	}
-	else{
-		printk("F pick_next_task_fair: no parent_se pid:%d\n", task_of(se)->pid);
 	}
 
+
 	if(fifo_selected_se){
-		// printk(KERN_INFO "FIFO DECISION f\n");
+//		printk(KERN_INFO "FIFO DECISION f\n");
 		se = fifo_selected_se;
 	}
 
 	p = task_of(se);
-	//printk(KERN_INFO "TASK FIFO DECISION f task of %d\n", p->pid);
+//	printk(KERN_INFO "TASK FIFO DECISION F task of %d\n", p->pid);
 
 	//
 
@@ -5428,6 +5416,8 @@ again:
 	if (hrtick_enabled(rq))
 		hrtick_start_fair(rq, p);
 
+//	printk(KERN_INFO "TASK FIFO DECISION F END task of %d\n", p->pid);
+
 
 	return p;
 simple:
@@ -5441,37 +5431,16 @@ simple:
 
 	do {
 		se = pick_next_entity(cfs_rq, NULL);
-		// =e
-		//pick_fifo_next_task_fair(se, fifo_selected_se);
-
-		parent_se = se->real_parent;
-		if(parent_se){
-			fifo_selected_se = list_first_entry(&parent_se->children, struct sched_entity, node);
-			if(fifo_selected_se){
-				swap(fifo_selected_se->vruntime, se->vruntime);
-			}
-			else{
-				printk("S pick_next_task_fair: error fifo selected_se is not available pid:%d\n", task_of(se)->pid);
-			}
-		}
-		else{
-			printk("S pick_next_task_fair: no parent_se pid:%d\n", task_of(se)->pid);
-		}
-
-		if(fifo_selected_se){
-			//printk(KERN_INFO "FIFO DECISION s\n");
-
-			se = fifo_selected_se;
-		}
-		//
 		set_next_entity(cfs_rq, se);
 		cfs_rq = group_cfs_rq(se);
 	} while (cfs_rq);
 
 	p = task_of(se);
+//	printk(KERN_INFO "TASK FIFO DECISION S task of %d\n", p->pid);
 
 	if (hrtick_enabled(rq))
 		hrtick_start_fair(rq, p);
+//	printk(KERN_INFO "TASK FIFO DECISION F END simple task of %d\n", p->pid);
 
 	return p;
 
@@ -5482,6 +5451,9 @@ idle:
 	 * further scheduler activity on it and we're being very careful to
 	 * re-start the picking loop.
 	 */
+//	printk(KERN_INFO "idle idle \n");
+//	if (rq)
+//		printk(KERN_INFO "idle idle nr running= %d \n", rq->nr_running);
 	lockdep_unpin_lock(&rq->lock);
 	new_tasks = idle_balance(rq);
 	lockdep_pin_lock(&rq->lock);
@@ -8076,17 +8048,6 @@ static void task_fork_fair(struct task_struct *p)
 	int this_cpu = smp_processor_id();
 	struct rq *rq = this_rq();
 	unsigned long flags;
-
-	// =e
-//	if(p->real_parent)
-//		se->real_parent = &p->real_parent->se;
-//	else
-//		printk(KERN_INFO "task_fork_fair: se.pid: %d has no real parent\n", p->pid);
-//	if(!se->head_initialized){
-//		printk(KERN_INFO "task_fork_fair head not initialized %d %d %d\n", se->head_initialized, p->pid, task_of(se)->pid);
-//
-//	}
-	//
 
 	raw_spin_lock_irqsave(&rq->lock, flags);
 

@@ -3215,7 +3215,7 @@ static void __sched notrace __schedule(bool preempt)
 		trace_sched_switch(preempt, prev, next);
 
 		rq = context_switch(rq, prev, next); /* unlocks the rq */
-
+//		printk(KERN_INFO "testing \n");
 
 		// aghax
 		// if(cpu == 0)
