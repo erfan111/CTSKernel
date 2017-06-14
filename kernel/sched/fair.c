@@ -489,6 +489,9 @@ static void __enqueue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 	struct rb_node *parent = NULL;
 	struct sched_entity *entry;
 	int leftmost = 1;
+	// aghax
+	struct rq *rq = rq_of(cfs_rq);
+	se->rank = rq->rq_rank++;
 
 	/*
 	 * Find the right place in the rbtree:
@@ -4197,8 +4200,6 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 			break;
 		cfs_rq = cfs_rq_of(se);
 		enqueue_entity(cfs_rq, se, flags);
-		//aghax
-		se->rank = rq->rq_rank++;
 
 		// =e
 //		if(parent_se){
@@ -5475,8 +5476,7 @@ static void put_prev_task_fair(struct rq *rq, struct task_struct *prev)
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
 		put_prev_entity(cfs_rq, se);
-		// aghax
-		se->rank = rq->rq_rank++;
+
 	}
 }
 
