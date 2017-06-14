@@ -490,6 +490,9 @@ static void __enqueue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 	struct rb_node *parent = NULL;
 	struct sched_entity *entry;
 	int leftmost = 1;
+	// aghax
+	struct rq* rq = rq_of(cfs_rq);
+	se->rank = rq->rq_rank++;
 
 	/*
 	 * Find the right place in the rbtree:
@@ -3309,6 +3312,7 @@ static void put_prev_entity(struct cfs_rq *cfs_rq, struct sched_entity *prev)
 		update_load_avg(prev, 0);
 	}
 	cfs_rq->curr = NULL;
+
 }
 
 static void
@@ -4206,8 +4210,6 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 			break;
 		cfs_rq = cfs_rq_of(se);
 		enqueue_entity(cfs_rq, se, flags);
-		//aghax
-		se->rank = rq->rq_rank++;
 
 		/*
 		 * end evaluation on encountering a throttled cfs_rq
@@ -5295,6 +5297,15 @@ preempt:
 // 	}
 // }
 
+static void print_fifo(struct sched_entity *se, struct sched_entity *cfs_selected){
+	struct sched_entity *child;
+	printk(KERN_INFO "====== printing childs of %d vruntime=%llu, cfs selected: %d\n", task_of(se)->pid, se->vruntime, task_of(cfs_selected)->pid);
+	list_for_each_entry(child, &se->children, node){
+		printk(KERN_INFO "child: %d vruntime=%llu\n", task_of(child)->pid, se->vruntime);
+	}
+	printk(KERN_INFO "======\n");
+}
+
 static struct task_struct *
 pick_next_task_fair(struct rq *rq, struct task_struct *prev)
 {
@@ -5311,9 +5322,7 @@ pick_next_task_fair(struct rq *rq, struct task_struct *prev)
 
 again:
 #ifdef CONFIG_FAIR_GROUP_SCHED
-	//aghax
-	//goto simple;
-	//
+
 	if (!cfs_rq->nr_running)
 		goto idle;
 
@@ -5353,38 +5362,25 @@ again:
 		}
 
 		se = pick_next_entity(cfs_rq, curr);
-//		printk(KERN_INFO "do while cfs\n");
-
 		cfs_rq = group_cfs_rq(se);
-//		printk(KERN_INFO "group_cfs_rq\n");
 
 	} while (cfs_rq);
 
-//	printk(KERN_INFO "cfs chose our turn\n");
 
 	// =e
-	//pick_fifo_next_task_fair(se, fifo_selected_se);
-	if(!se)
-		printk(KERN_INFO "SE IS NULLLLLLLLLLL\n");
 
 	parent_se = se->real_parent;
 	if(parent_se && parent_se->children_size){
 		fifo_selected_se = list_first_entry(&parent_se->children, struct sched_entity, node);
-		if(fifo_selected_se){
+		if(fifo_selected_se && fifo_selected_se != se){
+			//print_fifo(parent_se, se);
 			swap(fifo_selected_se->vruntime, se->vruntime);
+			se = fifo_selected_se;
 		}
 	}
-
-
-	if(fifo_selected_se){
-//		printk(KERN_INFO "FIFO DECISION f\n");
-		se = fifo_selected_se;
-	}
-
-	p = task_of(se);
-//	printk(KERN_INFO "TASK FIFO DECISION F task of %d\n", p->pid);
-
 	//
+	p = task_of(se);
+
 
 	/*
 	 * Since we haven't yet done put_prev_entity and if the selected task
@@ -5482,8 +5478,7 @@ static void put_prev_task_fair(struct rq *rq, struct task_struct *prev)
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
 		put_prev_entity(cfs_rq, se);
-		// aghax
-		se->rank = rq->rq_rank++;
+
 	}
 }
 
