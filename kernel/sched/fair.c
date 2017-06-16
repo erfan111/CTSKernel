@@ -5317,6 +5317,7 @@ pick_next_task_fair(struct rq *rq, struct task_struct *prev)
 	// =e
 	struct sched_entity * fifo_selected_se = NULL;
 	struct sched_entity * parent_se;
+	int flag = 0;
 	//
 	int new_tasks;
 
@@ -5376,6 +5377,7 @@ again:
 			//print_fifo(parent_se, se);
 			swap(fifo_selected_se->vruntime, se->vruntime);
 			se = fifo_selected_se;
+			flag = 1;
 		}
 	}
 	//
@@ -5390,6 +5392,17 @@ again:
 
 	if (prev != p) {
 		struct sched_entity *pse = &prev->se;
+		struct sched_entiry *prev_parent_se = pse->real_parent;
+
+		// =e
+		list_add_tail(&pse->node, &prev_parent_se->children);
+		prev_parent_se->children_size++;
+		if(flag) {
+			list_del(&se->node);
+			parent_se->children_size--;
+		}
+
+		//
 
 		while (!(cfs_rq = is_same_group(se, pse))) {
 			int se_depth = se->depth;
@@ -5423,6 +5436,17 @@ simple:
 	if (!cfs_rq->nr_running)
 		goto idle;
 
+	// =e
+	{
+		struct sched_entity *pse = &prev->se;
+		struct sched_entiry *prev_parent_se = pse->real_parent;
+
+		list_add_tail(&pse->node, &prev_parent_se->children);
+		prev_parent_se->children_size++;
+	}
+	//
+
+
 	put_prev_task(rq, prev);
 
 	do {
@@ -5432,11 +5456,9 @@ simple:
 	} while (cfs_rq);
 
 	p = task_of(se);
-//	printk(KERN_INFO "TASK FIFO DECISION S task of %d\n", p->pid);
 
 	if (hrtick_enabled(rq))
 		hrtick_start_fair(rq, p);
-//	printk(KERN_INFO "TASK FIFO DECISION F END simple task of %d\n", p->pid);
 
 	return p;
 
