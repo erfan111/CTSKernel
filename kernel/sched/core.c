@@ -845,6 +845,8 @@ static inline void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
 
 static inline void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
 {
+
+	printk(KERN_INFO "dequeue_task %d\n", p->pid);
 	update_rq_clock(rq);
 	if (!(flags & DEQUEUE_SAVE))
 		sched_info_dequeued(rq, p);
@@ -3181,7 +3183,6 @@ static void __sched notrace __schedule(bool preempt)
 		if (unlikely(signal_pending_state(prev->state, prev))) {
 			prev->state = TASK_RUNNING;
 		} else {
-			printk("core schedule: before calling dequeue task %d\n", prev->pid);
 			deactivate_task(rq, prev, DEQUEUE_SLEEP);
 			prev->on_rq = 0;
 
@@ -3203,9 +3204,7 @@ static void __sched notrace __schedule(bool preempt)
 
 	if (task_on_rq_queued(prev))
 		update_rq_clock(rq);
-	printk("core schedule: before calling pick task %d\n", prev->pid);
 	next = pick_next_task(rq, prev);
-	printk("core schedule: after calling pick task %d\n", next->pid);
 	clear_tsk_need_resched(prev);
 	clear_preempt_need_resched();
 	rq->clock_skip_update = 0;
@@ -3221,22 +3220,22 @@ static void __sched notrace __schedule(bool preempt)
 //		printk(KERN_INFO "testing \n");
 
 		// aghax
-		 if(cpu == 0)
-		 {
-		 	if(loop_counter > loop_limit)
-		 	{
-		 		printk(KERN_INFO "batch_report_start\n");
-		 		for(loop_counter = 0; loop_counter < loop_limit; loop_counter++)
-		 			printk(KERN_INFO "%d\n", FCFS[loop_counter]);
-		 		printk(KERN_INFO "batch_report_end\n");
-		 		loop_counter = 0;
-		 	}
-		 	if(next->pid > 0)
-		 	{
-		 		FCFS[loop_counter] = next->se.rank;//loop_counter;
-		 		loop_counter++;
-		 	}
-		 }
+//		 if(cpu == 0)
+//		 {
+//		 	if(loop_counter > loop_limit)
+//		 	{
+//		 		printk(KERN_INFO "batch_report_start\n");
+//		 		for(loop_counter = 0; loop_counter < loop_limit; loop_counter++)
+//		 			printk(KERN_INFO "%d\n", FCFS[loop_counter]);
+//		 		printk(KERN_INFO "batch_report_end\n");
+//		 		loop_counter = 0;
+//		 	}
+//		 	if(next->pid > 0)
+//		 	{
+//		 		FCFS[loop_counter] = next->se.rank;//loop_counter;
+//		 		loop_counter++;
+//		 	}
+//		 }
 
 
 		cpu = cpu_of(rq);
