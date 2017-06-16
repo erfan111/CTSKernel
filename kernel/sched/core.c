@@ -2139,6 +2139,7 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 	p->se.vruntime			= 0;
 	INIT_LIST_HEAD(&p->se.group_node);
 	// =e
+	printk(KERN_INFO "__sched_fork initializing se %d\n", p->pid);
 	INIT_LIST_HEAD(&p->se.children);
 	p->se.head_initialized = 1;
 	p->se.children_size = 0;
@@ -3180,6 +3181,7 @@ static void __sched notrace __schedule(bool preempt)
 		if (unlikely(signal_pending_state(prev->state, prev))) {
 			prev->state = TASK_RUNNING;
 		} else {
+			printk("core schedule: before calling dequeue task %d\n", prev->pid);
 			deactivate_task(rq, prev, DEQUEUE_SLEEP);
 			prev->on_rq = 0;
 
@@ -3201,8 +3203,9 @@ static void __sched notrace __schedule(bool preempt)
 
 	if (task_on_rq_queued(prev))
 		update_rq_clock(rq);
-
+	printk("core schedule: before calling pick task %d\n", prev->pid);
 	next = pick_next_task(rq, prev);
+	printk("core schedule: after calling pick task %d\n", next->pid);
 	clear_tsk_need_resched(prev);
 	clear_preempt_need_resched();
 	rq->clock_skip_update = 0;
