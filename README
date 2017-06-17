@@ -1,5 +1,24 @@
-        Linux kernel release 4.x <http://kernel.org/>
+        Linux kernel release 4.x <http://kernel.org/>  
+Kernel Version 4.4.71
+--
+See the edited parts:  
+- include/linux/sched.h  
+- kernel/sched/sched.h  
+- kernel/sched/core.c  
+- kernel/sched/fair.c  
 
+Changes related to the FIFO Scheduler are to be found using ***`=e`***   in comment
+Changes related to the disorder counter are to be found using ***`aghax`*** in comment  
+
+branches of code:  
+1. master:  Main FIFO+CFS Scheduler code  
+
+
+
+
+
+
+-------------------------------------
 These are the release notes for Linux version 4.  Read them carefully,
 as they tell you what this is all about, explain how to install the
 kernel, and what to do if something goes wrong. 
