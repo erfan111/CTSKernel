@@ -846,12 +846,12 @@ static inline void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
 static inline void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
 {
 
-	printk(KERN_INFO "core start dequeue_task %d\n", p->pid);
+//	printk(KERN_INFO "core start dequeue_task %d\n", p->pid);
 	update_rq_clock(rq);
 	if (!(flags & DEQUEUE_SAVE))
 		sched_info_dequeued(rq, p);
 	p->sched_class->dequeue_task(rq, p, flags);
-	printk(KERN_INFO "core end dequeue_task %d\n", p->pid);
+//	printk(KERN_INFO "core end dequeue_task %d\n", p->pid);
 
 }
 

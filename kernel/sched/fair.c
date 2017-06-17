@@ -257,9 +257,9 @@ static inline struct rq *rq_of(struct cfs_rq *cfs_rq)
 static inline struct task_struct *task_of(struct sched_entity *se)
 {
 #ifdef CONFIG_SCHED_DEBUG
-	//WARN_ON_ONCE(!entity_is_task(se));
+	WARN_ON_ONCE(!entity_is_task(se));
 #endif
-	BUG_ON(!entity_is_task(se));
+
 	return container_of(se, struct task_struct, se);
 }
 
@@ -3200,6 +3200,9 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 static void
 set_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
+	// =e
+	struct sched_entity *parent_se;
+	//
 	/* 'current' is not kept within the tree. */
 	if (se->on_rq) {
 		/*
@@ -3210,6 +3213,13 @@ set_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 		update_stats_wait_end(cfs_rq, se);
 		__dequeue_entity(cfs_rq, se);
 		update_load_avg(se, 1);
+		// =e
+		if (entity_is_task(se)) {
+			parent_se = se->real_parent;
+			list_del(&se->node);
+			parent_se->children_size--;
+		}
+		//
 	}
 
 	update_stats_curr_start(cfs_rq, se);
@@ -3293,6 +3303,9 @@ static bool check_cfs_rq_runtime(struct cfs_rq *cfs_rq);
 
 static void put_prev_entity(struct cfs_rq *cfs_rq, struct sched_entity *prev)
 {
+	// =e
+	struct sched_entity *prev_parent_se;
+	//
 	/*
 	 * If still on the runqueue then deactivate_task()
 	 * was not called and update_curr() has to be done:
@@ -3310,9 +3323,16 @@ static void put_prev_entity(struct cfs_rq *cfs_rq, struct sched_entity *prev)
 		__enqueue_entity(cfs_rq, prev);
 		/* in !on_rq case, update occurred at dequeue */
 		update_load_avg(prev, 0);
+		// =e
+		if (entity_is_task(prev)) {
+			prev_parent_se = prev->real_parent;
+			list_add_tail(&prev->node, &prev_parent_se->children);
+			prev_parent_se->children_size++;
+		}
+		//
 	}
 	cfs_rq->curr = NULL;
-	printk(KERN_INFO "DFDFDFDFDFDFDFDFD\n");
+
 }
 
 static void
@@ -4184,12 +4204,9 @@ static inline void hrtick_update(struct rq *rq)
 
 static void print_fifo(struct sched_entity *se, struct sched_entity *cfs_selected){
 	struct sched_entity *child;
-
 	printk(KERN_INFO "====== printing childs of %d vruntime=%llu, cfs selected: %d ======\n", task_of(se)->pid, se->vruntime, task_of(cfs_selected)->pid);
 	list_for_each_entry(child, &se->children, node){
-		printk(KERN_INFO "child: %d vruntime=%llu\n", 66666/*task_of(child)->pid*/, se->vruntime);
-		if(child->my_q)
-			printk(KERN_INFO "I have my queue\n");
+		printk(KERN_INFO "child: %d vruntime=%llu\n", task_of(child)->pid, se->vruntime);
 	}
 	printk(KERN_INFO "=======================================================\n");
 }
@@ -4205,15 +4222,7 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	struct cfs_rq *cfs_rq;
 	struct sched_entity *se = &p->se;
 	// =e
-	struct sched_entity *parent_se = se->real_parent;
-	cfs_rq = cfs_rq_of(se);
-
-	printk(KERN_INFO "enqueue_task_fair: %d , %d %d %d\n", p->pid, parent_se != NULL, entity_is_task(se), se != cfs_rq->curr);
-	if(parent_se && entity_is_task(se) && se != cfs_rq->curr ){
-		parent_se->children_size++;
-		list_add_tail(&se->node, &parent_se->children);
-	}
-	//print_fifo(parent_se,se);
+	struct sched_entity *parent_se;
 	//
 
 	for_each_sched_entity(se) {
@@ -4221,6 +4230,17 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 			break;
 		cfs_rq = cfs_rq_of(se);
 		enqueue_entity(cfs_rq, se, flags);
+		// =e
+		if (entity_is_task(se)) {
+			parent_se = se->real_parent;
+//			printk(KERN_INFO "enqueue_task_fair: %d , %d %d %d\n", p->pid, parent_se != NULL, entity_is_task(se), se != cfs_rq->curr);
+			if(parent_se && se != cfs_rq->curr ){
+				parent_se->children_size++;
+				list_add_tail(&se->node, &parent_se->children);
+			}
+		}
+
+		//
 
 		/*
 		 * end evaluation on encountering a throttled cfs_rq
@@ -4270,20 +4290,21 @@ static void dequeue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	struct sched_entity *se = &p->se;
 	// =e
 	struct sched_entity *parent_se;
-	parent_se = se->real_parent;
-
-	//print_fifo(parent_se, se);
-
-	if(parent_se && rq->curr != p){
-		list_del(&se->node);
-		parent_se->children_size--;
-	}
 	//
 	int task_sleep = flags & DEQUEUE_SLEEP;
 
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
 		dequeue_entity(cfs_rq, se, flags);
+		// =e
+		if (entity_is_task(se)) {
+			parent_se = se->real_parent;
+			if(parent_se && cfs_rq->curr != se){
+				list_del(&se->node);
+				parent_se->children_size--;
+			}
+		}
+		//
 
 
 		/*
@@ -5319,7 +5340,7 @@ preempt:
 static struct task_struct *
 pick_next_task_fair(struct rq *rq, struct task_struct *prev)
 {
-	printk(KERN_INFO "pick_next_task_fair1\n");
+//	printk(KERN_INFO "pick_next_task_fair\n");
 
 	struct cfs_rq *cfs_rq = &rq->cfs;
 	struct sched_entity *se;
@@ -5371,16 +5392,11 @@ again:
 			if (unlikely(check_cfs_rq_runtime(cfs_rq)))
 				goto simple;
 		}
-		printk(KERN_INFO "pick_next_task_fair10\n");
 
 		se = pick_next_entity(cfs_rq, curr);
-		printk(KERN_INFO "pick_next_task_fair11\n");
-
 		cfs_rq = group_cfs_rq(se);
-		printk(KERN_INFO "pick_next_task_fair12\n");
 
 	} while (cfs_rq);
-	printk(KERN_INFO "pick_next_task_fair2\n");
 
 
 	// =e
@@ -5388,7 +5404,7 @@ again:
 	parent_se = se->real_parent;
 	if(parent_se && parent_se->children_size){
 		flag = 1;
-		print_fifo(parent_se, se);
+//		print_fifo(parent_se, se);
 		fifo_selected_se = list_first_entry(&parent_se->children, struct sched_entity, node);
 		if(fifo_selected_se && fifo_selected_se != se){
 			//print_fifo(parent_se, se);
@@ -5399,7 +5415,6 @@ again:
 
 	}
 	//
-	printk(KERN_INFO "Here I am %d\n", flag);
 	p = task_of(se);
 
 
@@ -5411,7 +5426,6 @@ again:
 
 	if (prev != p) {
 		struct sched_entity *pse = &prev->se;
-		struct sched_entity *prev_parent_se = pse->real_parent;
 
 		while (!(cfs_rq = is_same_group(se, pse))) {
 			int se_depth = se->depth;
@@ -5427,33 +5441,19 @@ again:
 			}
 		}
 
-		printk(KERN_INFO "put_prev_entity(in pick): %d , %d\n", prev->pid, se->on_rq);
-		if (pse->on_rq && entity_is_task(pse)) {
-			printk(KERN_INFO "pick_next_task_fair: 2.ma ham kardimesh too %d\n", prev->pid);
-			list_add_tail(&pse->node, &prev_parent_se->children);
-			prev_parent_se->children_size++;
-		}
-
 		put_prev_entity(cfs_rq, pse);
 		set_next_entity(cfs_rq, se);
 
-		if(se->on_rq && entity_is_task(se)) {
-			list_del(&se->node);
-			parent_se->children_size--;
-		}
-		//
 	}
 
 	if (hrtick_enabled(rq))
 		hrtick_start_fair(rq, p);
 
-	printk(KERN_INFO "TASK FIFO DECISION F END task of %d flag=%d \n", p->pid, flag);
+//	printk(KERN_INFO "TASK FIFO DECISION F END task of %d flag=%d \n", p->pid, flag);
 
 
 	return p;
 simple:
-printk(KERN_INFO "pick_next_task_fair3\n");
-
 	cfs_rq = &rq->cfs;
 #endif
 
@@ -5461,7 +5461,6 @@ printk(KERN_INFO "pick_next_task_fair3\n");
 		goto idle;
 
 	put_prev_task(rq, prev);
-	printk(KERN_INFO "pick_next_task_fair4\n");
 
 	do {
 		se = pick_next_entity(cfs_rq, NULL);
@@ -5470,20 +5469,12 @@ printk(KERN_INFO "pick_next_task_fair3\n");
 	} while (cfs_rq);
 
 	p = task_of(se);
-	printk(KERN_INFO "pick_next_task_fair5\n");
 
-	// =e
-	parent_se = se->real_parent;
-
-	if (se->on_rq && entity_is_task(se)) {
-		list_del(&se->node);
-		parent_se->children_size--;
-	}
+	//print_fifo(parent_se, se);
 	//
 
 	if (hrtick_enabled(rq))
 		hrtick_start_fair(rq, p);
-	printk(KERN_INFO "pick_next_task_fair6\n");
 
 	return p;
 
@@ -5494,7 +5485,7 @@ idle:
 	 * further scheduler activity on it and we're being very careful to
 	 * re-start the picking loop.
 	 */
-	printk(KERN_INFO "idle idle \n");
+//	printk(KERN_INFO "idle idle \n");
 //	if (rq)
 //		printk(KERN_INFO "idle idle nr running= %d \n", rq->nr_running);
 	lockdep_unpin_lock(&rq->lock);
@@ -5521,15 +5512,6 @@ static void put_prev_task_fair(struct rq *rq, struct task_struct *prev)
 {
 	struct sched_entity *se = &prev->se;
 	struct cfs_rq *cfs_rq;
-	struct sched_entity *prev_parent_se;
-//	printk(KERN_INFO "put_prev_task_fair: %d\n", prev->pid);
-	prev_parent_se = se->real_parent;
-	printk(KERN_INFO "put_prev_task_fair: %d , %d\n", prev->pid, se->on_rq);
-	if (se->on_rq && entity_is_task(se)) {
-//		printk(KERN_INFO "put_prev_task_fair: 1.ma ham kardimesh too %d\n", prev->pid);
-		list_add_tail(&se->node, &prev_parent_se->children);
-		prev_parent_se->children_size++;
-	}
 
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
@@ -8075,21 +8057,14 @@ static void task_tick_fair(struct rq *rq, struct task_struct *curr, int queued)
 {
 	struct cfs_rq *cfs_rq;
 	struct sched_entity *se = &curr->se;
-	printk(KERN_INFO "SHIIIIIIIIIIIIIIIIT1\n");
 
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
-		printk(KERN_INFO "SHIIIIIIIIIIIIIIIIT2\n");
-
 		entity_tick(cfs_rq, se, queued);
-		printk(KERN_INFO "SHIIIIIIIIIIIIIIIIT3\n");
-
 	}
 
 	if (static_branch_unlikely(&sched_numa_balancing))
 		task_tick_numa(rq, curr);
-
-	printk(KERN_INFO "SHIIIIIIIIIIIIIIIIT4\n");
 }
 
 /*
