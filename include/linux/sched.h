@@ -1264,6 +1264,13 @@ struct sched_entity {
 	int head_initialized;
 	//
 
+	// =aghax
+	u64			disorder_aggregate;
+	u64			last_disorder;
+	u64			disorder_counter;
+	u64			disorder_tag;
+	//
+
 #ifdef CONFIG_SCHEDSTATS
 	struct sched_statistics statistics;
 #endif

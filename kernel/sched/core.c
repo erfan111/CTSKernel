@@ -2143,11 +2143,18 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 	p->se.vruntime			= 0;
 	INIT_LIST_HEAD(&p->se.group_node);
 	// =e
-	printk(KERN_INFO "__sched_fork initializing se %d\n", p->pid);
+	//printk(KERN_INFO "__sched_fork initializing se %d\n", p->pid);
 	INIT_LIST_HEAD(&p->se.children);
 	p->se.head_initialized = 1;
 	p->se.children_size = 0;
 	p->se.real_parent = &p->real_parent->se;
+	//
+
+	// =aghax
+	p->se.disorder_aggregate = 0;
+	p->se.last_disorder = 0;
+	p->se.disorder_counter = 0;
+	p->se.disorder_tag = 0;
 	//
 
 #ifdef CONFIG_SCHEDSTATS

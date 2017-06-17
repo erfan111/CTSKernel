@@ -35,6 +35,10 @@
 
 #include "sched.h"
 
+#define print_each 10000
+
+static u64 print_counter = 0;
+
 /*
  * Targeted preemption latency for CPU-bound tasks:
  * (default: 6ms * (1 + ilog(ncpus)), units: nanoseconds)
@@ -3323,11 +3327,22 @@ static void put_prev_entity(struct cfs_rq *cfs_rq, struct sched_entity *prev)
 		__enqueue_entity(cfs_rq, prev);
 		/* in !on_rq case, update occurred at dequeue */
 		update_load_avg(prev, 0);
+
+
+
+
 		// =e
 		if (entity_is_task(prev)) {
 			prev_parent_se = prev->real_parent;
 			list_add_tail(&prev->node, &prev_parent_se->children);
 			prev_parent_se->children_size++;
+
+			// =aghax
+			/*
+			 * FIFO Measurement
+			 */
+				prev->disorder_tag = prev_parent_se->disorder_counter++;
+			//
 		}
 		//
 	}
@@ -4237,6 +4252,13 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 			if(parent_se && se != cfs_rq->curr ){
 				parent_se->children_size++;
 				list_add_tail(&se->node, &parent_se->children);
+
+				// =aghax
+				/*
+				 * FIFO Measurement
+				 */
+				se->disorder_tag = parent_se->disorder_counter++;
+				//
 			}
 		}
 
@@ -5409,14 +5431,40 @@ again:
 		if(fifo_selected_se && fifo_selected_se != se){
 			//print_fifo(parent_se, se);
 			swap(fifo_selected_se->vruntime, se->vruntime);
-			se = fifo_selected_se;
+			se = fifo_selected_se;  // We shoud play with this line for switching between default and improved mode
 			flag = 2;
 		}
 
+			// =aghax
+			/*
+			 * FIFO Measurements
+			 */
+			if(se->disorder_tag < parent_se->last_disorder ) {
+				parent_se->disorder_aggregate++;
+			}
+			parent_se->last_disorder = se->disorder_tag;
+			//
 	}
 	//
+
 	p = task_of(se);
 
+	// =aghax
+	/*
+	 * FIFO Measurements
+	 */
+	if(parent_se &&  print_counter < print_each)
+	{
+		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
+				,parent_se->disorder_aggregate);
+	}
+
+	if(print_counter >= 3*print_each)
+		print_counter = 0;
+
+	print_counter++;
+	//printk(KERN_INFO "%d %d\n", print_counter, print_each);
+	//
 
 	/*
 	 * Since we haven't yet done put_prev_entity and if the selected task
@@ -5468,10 +5516,34 @@ simple:
 		cfs_rq = group_cfs_rq(se);
 	} while (cfs_rq);
 
-	p = task_of(se);
 
-	//print_fifo(parent_se, se);
+	// =aghax
+	/*
+	 * FIFO Measurements
+	 */
+	parent_se = se->real_parent;
+	if(parent_se) {
+		if(se->disorder_tag < parent_se->last_disorder ) {
+			parent_se->disorder_aggregate++;
+		}
+		parent_se->last_disorder = se->disorder_tag;
+	}
+
+	if(parent_se &&  print_counter < print_each)
+	{
+		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\t SCHED_TAG ----> "
+				"%llu\n", parent_se->disorder_aggregate, parent_se->disorder_tag);
+	}
+
+	if(print_counter >= 10*print_each)
+		print_counter = 0;
+
+	print_counter++;
 	//
+
+
+
+	p = task_of(se);
 
 	if (hrtick_enabled(rq))
 		hrtick_start_fair(rq, p);
@@ -5485,9 +5557,23 @@ idle:
 	 * further scheduler activity on it and we're being very careful to
 	 * re-start the picking loop.
 	 */
-//	printk(KERN_INFO "idle idle \n");
-//	if (rq)
-//		printk(KERN_INFO "idle idle nr running= %d \n", rq->nr_running);
+
+	// =aghax
+	/*
+	 * FIFO Measurement
+	 */
+	if(print_counter >= 10*print_each)
+		print_counter = 0;
+
+	print_counter++;
+	//
+
+
+	//printk(KERN_INFO "idle idle \n");
+	//	if (rq)
+	//		printk(KERN_INFO "idle idle nr running= %d \n", rq->nr_running);
+
+
 	lockdep_unpin_lock(&rq->lock);
 	new_tasks = idle_balance(rq);
 	lockdep_pin_lock(&rq->lock);
