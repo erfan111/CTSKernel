@@ -1258,17 +1258,17 @@ struct sched_entity {
 	u64			nr_migrations;
 	// =e
 	struct sched_entity *real_parent;
-	struct list_head children;
+	struct list_head *children;
 	struct list_head node;
-	int children_size;
-	int head_initialized;
+	int *children_size;
+//	int head_initialized;
 	//
 
 	// =aghax
-	u64			disorder_aggregate;
-	u64			last_disorder;
-	u64			disorder_counter;
-	u64			disorder_tag;
+	u64			*disorder_aggregate;
+	u64			*last_disorder;
+	u64			*disorder_counter;
+	u64			*disorder_tag;
 	//
 
 #ifdef CONFIG_SCHEDSTATS

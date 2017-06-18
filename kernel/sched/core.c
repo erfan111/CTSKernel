@@ -2133,8 +2133,10 @@ void __dl_clear_params(struct task_struct *p)
  */
 static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 {
+	// =e
+	int i;
+	//
 	p->on_rq			= 0;
-
 	p->se.on_rq			= 0;
 	p->se.exec_start		= 0;
 	p->se.sum_exec_runtime		= 0;
@@ -2144,17 +2146,30 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 	INIT_LIST_HEAD(&p->se.group_node);
 	// =e
 	//printk(KERN_INFO "__sched_fork initializing se %d\n", p->pid);
-	INIT_LIST_HEAD(&p->se.children);
-	p->se.head_initialized = 1;
-	p->se.children_size = 0;
+	p->se.children = kmalloc(nr_cpu_ids* sizeof(struct list_head), GFP_KERNEL);
+	p->se.children_size = kzalloc(nr_cpu_ids* sizeof(int), GFP_KERNEL);
+
+	// =aghax
+	/*
+	 * FIFO Measurement
+	 */
+	p->se.disorder_aggregate = kzalloc(nr_cpu_ids* sizeof(u64), GFP_KERNEL);
+	p->se.last_disorder = kzalloc(nr_cpu_ids* sizeof(u64), GFP_KERNEL);
+	p->se.disorder_counter = kzalloc(nr_cpu_ids* sizeof(u64), GFP_KERNEL);
+	p->se.disorder_tag = kzalloc(nr_cpu_ids* sizeof(u64), GFP_KERNEL);
+	//
+
+	for_each_possible_cpu(i){
+		INIT_LIST_HEAD(&p->se.children[i]);
+	}
 	p->se.real_parent = &p->real_parent->se;
 	//
 
 	// =aghax
-	p->se.disorder_aggregate = 0;
-	p->se.last_disorder = 0;
-	p->se.disorder_counter = 0;
-	p->se.disorder_tag = 0;
+//	p->se.disorder_aggregate = 0;
+//	p->se.last_disorder = 0;
+//	p->se.disorder_counter = 0;
+//	p->se.disorder_tag = 0;
 	//
 
 #ifdef CONFIG_SCHEDSTATS

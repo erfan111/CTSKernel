@@ -35,7 +35,8 @@
 
 #include "sched.h"
 
-#define print_each 10000
+#define print_each 1000
+#define threshold print_each * 1000
 
 static u64 print_counter = 0;
 
@@ -494,9 +495,7 @@ static void __enqueue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 	struct rb_node *parent = NULL;
 	struct sched_entity *entry;
 	int leftmost = 1;
-	//	// aghax
-	//	struct rq* rq = rq_of(cfs_rq);
-	//	se->rank = rq->rq_rank++;
+
 
 	/*
 	 * Find the right place in the rbtree:
@@ -3206,6 +3205,7 @@ set_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
 	// =e
 	struct sched_entity *parent_se;
+	int this_cpu = smp_processor_id();
 	//
 	/* 'current' is not kept within the tree. */
 	if (se->on_rq) {
@@ -3221,7 +3221,7 @@ set_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 		if (entity_is_task(se)) {
 			parent_se = se->real_parent;
 			list_del(&se->node);
-			parent_se->children_size--;
+			parent_se->children_size[this_cpu]--;
 		}
 		//
 	}
@@ -3309,6 +3309,7 @@ static void put_prev_entity(struct cfs_rq *cfs_rq, struct sched_entity *prev)
 {
 	// =e
 	struct sched_entity *prev_parent_se;
+	int this_cpu = smp_processor_id();
 	//
 	/*
 	 * If still on the runqueue then deactivate_task()
@@ -3328,20 +3329,17 @@ static void put_prev_entity(struct cfs_rq *cfs_rq, struct sched_entity *prev)
 		/* in !on_rq case, update occurred at dequeue */
 		update_load_avg(prev, 0);
 
-
-
-
 		// =e
 		if (entity_is_task(prev)) {
 			prev_parent_se = prev->real_parent;
-			list_add_tail(&prev->node, &prev_parent_se->children);
-			prev_parent_se->children_size++;
+			list_add_tail(&prev->node, &prev_parent_se->children[this_cpu]);
+			prev_parent_se->children_size[this_cpu]++;
 
 			// =aghax
 			/*
 			 * FIFO Measurement
 			 */
-				prev->disorder_tag = prev_parent_se->disorder_counter++;
+				prev->disorder_tag[this_cpu] = prev_parent_se->disorder_counter[this_cpu]++;
 			//
 		}
 		//
@@ -4219,10 +4217,15 @@ static inline void hrtick_update(struct rq *rq)
 
 static void print_fifo(struct sched_entity *se, struct sched_entity *cfs_selected){
 	struct sched_entity *child;
+	int i;
 	printk(KERN_INFO "====== printing childs of %d vruntime=%llu, cfs selected: %d ======\n", task_of(se)->pid, se->vruntime, task_of(cfs_selected)->pid);
-	list_for_each_entry(child, &se->children, node){
-		printk(KERN_INFO "child: %d vruntime=%llu\n", task_of(child)->pid, se->vruntime);
+	for_each_possible_cpu(i){
+		list_for_each_entry(child, &se->children[i], node){
+			printk(KERN_INFO "child: %d vruntime=%llu\n", task_of(child)->pid, se->vruntime);
+		}
+		printk(KERN_INFO "====\n");
 	}
+
 	printk(KERN_INFO "=======================================================\n");
 }
 
@@ -4238,6 +4241,7 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	struct sched_entity *se = &p->se;
 	// =e
 	struct sched_entity *parent_se;
+	int cpu = rq->cpu;
 	//
 
 	for_each_sched_entity(se) {
@@ -4250,14 +4254,14 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 			parent_se = se->real_parent;
 //			printk(KERN_INFO "enqueue_task_fair: %d , %d %d %d\n", p->pid, parent_se != NULL, entity_is_task(se), se != cfs_rq->curr);
 			if(parent_se && se != cfs_rq->curr ){
-				parent_se->children_size++;
-				list_add_tail(&se->node, &parent_se->children);
+				parent_se->children_size[cpu]++;
+				list_add_tail(&se->node, &parent_se->children[cpu]);
 
 				// =aghax
 				/*
 				 * FIFO Measurement
 				 */
-				se->disorder_tag = parent_se->disorder_counter++;
+				se->disorder_tag[cpu] = parent_se->disorder_counter[cpu]++;
 				//
 			}
 		}
@@ -4323,7 +4327,7 @@ static void dequeue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 			parent_se = se->real_parent;
 			if(parent_se && cfs_rq->curr != se){
 				list_del(&se->node);
-				parent_se->children_size--;
+				parent_se->children_size[rq->cpu]--;
 			}
 		}
 		//
@@ -5371,6 +5375,7 @@ pick_next_task_fair(struct rq *rq, struct task_struct *prev)
 	struct sched_entity * fifo_selected_se = NULL;
 	struct sched_entity * parent_se;
 	int flag = 0;
+	int cpu = rq->cpu;
 	//
 	int new_tasks;
 
@@ -5422,16 +5427,14 @@ again:
 
 
 	// =e
-
 	parent_se = se->real_parent;
-	if(parent_se && parent_se->children_size){
+	if(parent_se && parent_se->children_size[cpu]){
 		flag = 1;
 //		print_fifo(parent_se, se);
-		fifo_selected_se = list_first_entry(&parent_se->children, struct sched_entity, node);
+		fifo_selected_se = list_first_entry(&parent_se->children[cpu], struct sched_entity, node);
 		if(fifo_selected_se && fifo_selected_se != se){
-			//print_fifo(parent_se, se);
-			swap(fifo_selected_se->vruntime, se->vruntime);
-			se = fifo_selected_se;  // We shoud play with this line for switching between default and improved mode
+//			swap(fifo_selected_se->vruntime, se->vruntime); // We shoud play with this line for switching between default and improved mode
+//			se = fifo_selected_se;  // We shoud play with this line for switching between default and improved mode
 			flag = 2;
 		}
 
@@ -5439,10 +5442,10 @@ again:
 			/*
 			 * FIFO Measurements
 			 */
-			if(se->disorder_tag < parent_se->last_disorder ) {
-				parent_se->disorder_aggregate++;
+			if(se->disorder_tag[cpu] < parent_se->last_disorder[cpu] ) {
+				parent_se->disorder_aggregate[cpu]++;
 			}
-			parent_se->last_disorder = se->disorder_tag;
+			parent_se->last_disorder[cpu] = se->disorder_tag[cpu];
 			//
 	}
 	//
@@ -5455,11 +5458,11 @@ again:
 	 */
 	if(parent_se &&  print_counter < print_each)
 	{
-		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
-				,parent_se->disorder_aggregate);
+//		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
+//				,parent_se->disorder_aggregate[cpu]);
 	}
 
-	if(print_counter >= 3*print_each)
+	if(print_counter >= threshold)
 		print_counter = 0;
 
 	print_counter++;
@@ -5523,19 +5526,19 @@ simple:
 	 */
 	parent_se = se->real_parent;
 	if(parent_se) {
-		if(se->disorder_tag < parent_se->last_disorder ) {
-			parent_se->disorder_aggregate++;
+		if(se->disorder_tag[cpu] < parent_se->last_disorder[cpu] ) {
+			parent_se->disorder_aggregate[cpu]++;
 		}
-		parent_se->last_disorder = se->disorder_tag;
+		parent_se->last_disorder[cpu] = se->disorder_tag[cpu];
 	}
 
 	if(parent_se &&  print_counter < print_each)
 	{
-		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\t SCHED_TAG ----> "
-				"%llu\n", parent_se->disorder_aggregate, parent_se->disorder_tag);
+		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
+				,parent_se->disorder_aggregate[cpu]);
 	}
 
-	if(print_counter >= 10*print_each)
+	if(print_counter >= threshold)
 		print_counter = 0;
 
 	print_counter++;
@@ -5562,7 +5565,7 @@ idle:
 	/*
 	 * FIFO Measurement
 	 */
-	if(print_counter >= 10*print_each)
+	if(print_counter >= threshold)
 		print_counter = 0;
 
 	print_counter++;
