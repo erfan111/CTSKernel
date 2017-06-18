@@ -5433,8 +5433,8 @@ again:
 //		print_fifo(parent_se, se);
 		fifo_selected_se = list_first_entry(&parent_se->children[cpu], struct sched_entity, node);
 		if(fifo_selected_se && fifo_selected_se != se){
-//			swap(fifo_selected_se->vruntime, se->vruntime); // We shoud play with this line for switching between default and improved mode
-//			se = fifo_selected_se;  // We shoud play with this line for switching between default and improved mode
+			swap(fifo_selected_se->vruntime, se->vruntime); // We shoud play with this line for switching between default and improved mode
+			se = fifo_selected_se;  // We shoud play with this line for switching between default and improved mode
 			flag = 2;
 		}
 
@@ -5458,7 +5458,7 @@ again:
 	 */
 	if(parent_se &&  print_counter < print_each)
 	{
-//		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
+////		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
 //				,parent_se->disorder_aggregate[cpu]);
 	}
 
