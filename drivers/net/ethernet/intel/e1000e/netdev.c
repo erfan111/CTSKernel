@@ -1038,7 +1038,7 @@ static bool e1000_clean_rx_irq(struct e1000_ring *rx_ring, int *work_done,
 
 		//Note(Afshin): Add time tag to recived packet
 		{
-			
+			/*
 			int i;
 			printk("Afshin: Reception1======================================\n");
 			for(i = 0; i < skb->len - 5 + 1; i++)
@@ -1049,9 +1049,10 @@ static bool e1000_clean_rx_irq(struct e1000_ring *rx_ring, int *work_done,
 					printk("AGHAXIMOUS: %d %d\n ", i, skb->len);
 				}
 			}
+			*/
 			if(memcmp(skb->data + 66, "IUST:", 5) == 0) //&& skb->len >= 87)
 			{
-				printk("inif\n");
+				//printk("inif\n");
 				struct timeval tv;
 				do_gettimeofday(&tv);
 				memcpy(skb->data + 71, &tv, sizeof(tv));
@@ -5771,7 +5772,7 @@ static netdev_tx_t e1000_xmit_frame(struct sk_buff *skb,
 			//char diffStr[16];
 			//long int diff;
 			struct timeval sendtime;
-			printk("tif\n");
+			//printk("tif\n");
 			do_gettimeofday(&sendtime);
 			//memcpy(&recivedTime, skb->data + 71, sizeof(recivedTime));
 			//diff = ((sendtime.tv_sec - recivedTime.tv_sec) * 1000000L + sendtime.tv_usec) - recivedTime.tv_usec;
