@@ -37,7 +37,8 @@
 
 #define print_each 1000
 #define threshold print_each * 1000
-
+static int global_counter = 0;
+static int simple_counter = 0;
 static u64 print_counter = 0;
 
 /*
@@ -5442,10 +5443,10 @@ again:
 			/*
 			 * FIFO Measurements
 			 */
-			if(se->disorder_tag[cpu] < parent_se->last_disorder[cpu] ) {
-				parent_se->disorder_aggregate[cpu]++;
-			}
-			parent_se->last_disorder[cpu] = se->disorder_tag[cpu];
+//			if(se->disorder_tag[cpu] < parent_se->last_disorder[cpu] ) {
+//				parent_se->disorder_aggregate[cpu]++;
+//			}
+//			parent_se->last_disorder[cpu] = se->disorder_tag[cpu];
 			//
 	}
 	//
@@ -5456,11 +5457,11 @@ again:
 	/*
 	 * FIFO Measurements
 	 */
-	if(parent_se &&  print_counter < print_each)
-	{
-////		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
-//				,parent_se->disorder_aggregate[cpu]);
-	}
+//	if(parent_se &&  print_counter < print_each)
+//	{
+//////		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
+////				,parent_se->disorder_aggregate[cpu]);
+//	}
 
 	if(print_counter >= threshold)
 		print_counter = 0;
@@ -5501,7 +5502,13 @@ again:
 		hrtick_start_fair(rq, p);
 
 //	printk(KERN_INFO "TASK FIFO DECISION F END task of %d flag=%d \n", p->pid, flag);
-
+	// =e
+	global_counter++;
+	if (global_counter % 5000 == 0){
+		float perc = (simple_counter / (simple_counter + global_counter)) * 100.0;
+		printk(KERN_INFO "normal=%d , simple=%d , percent=%f\n", global_counter, simple_counter, perc);
+	}
+	//
 
 	return p;
 simple:
@@ -5524,24 +5531,24 @@ simple:
 	/*
 	 * FIFO Measurements
 	 */
-	parent_se = se->real_parent;
-	if(parent_se) {
-		if(se->disorder_tag[cpu] < parent_se->last_disorder[cpu] ) {
-			parent_se->disorder_aggregate[cpu]++;
-		}
-		parent_se->last_disorder[cpu] = se->disorder_tag[cpu];
-	}
-
-	if(parent_se &&  print_counter < print_each)
-	{
-		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
-				,parent_se->disorder_aggregate[cpu]);
-	}
-
-	if(print_counter >= threshold)
-		print_counter = 0;
-
-	print_counter++;
+//	parent_se = se->real_parent;
+//	if(parent_se) {
+//		if(se->disorder_tag[cpu] < parent_se->last_disorder[cpu] ) {
+//			parent_se->disorder_aggregate[cpu]++;
+//		}
+//		parent_se->last_disorder[cpu] = se->disorder_tag[cpu];
+//	}
+//
+//	if(parent_se &&  print_counter < print_each)
+//	{
+//		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
+//				,parent_se->disorder_aggregate[cpu]);
+//	}
+//
+//	if(print_counter >= threshold)
+//		print_counter = 0;
+//
+//	print_counter++;
 	//
 
 
@@ -5550,7 +5557,7 @@ simple:
 
 	if (hrtick_enabled(rq))
 		hrtick_start_fair(rq, p);
-
+	simple_counter++;
 	return p;
 
 idle:
