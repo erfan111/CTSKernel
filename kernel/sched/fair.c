@@ -5505,7 +5505,7 @@ again:
 	// =e
 	global_counter++;
 	if (global_counter % 5000 == 0){
-		float perc = (simple_counter / (simple_counter + global_counter)) * 100.0;
+		double perc = (simple_counter / (simple_counter + global_counter)) * 100.0;
 		printk(KERN_INFO "normal=%d , simple=%d , percent=%f\n", global_counter, simple_counter, perc);
 	}
 	//
