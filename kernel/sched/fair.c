@@ -39,6 +39,9 @@
 #define threshold print_each * 1000
 static int global_counter = 0;
 static int simple_counter = 0;
+static int idle_counter = 0;
+static int not_fair_counter = 0;
+static int throttle_counter = 0;
 static u64 print_counter = 0;
 
 /*
@@ -5383,11 +5386,17 @@ pick_next_task_fair(struct rq *rq, struct task_struct *prev)
 again:
 #ifdef CONFIG_FAIR_GROUP_SCHED
 
-	if (!cfs_rq->nr_running)
+	if (!cfs_rq->nr_running){
+		idle_counter++;
 		goto idle;
+	}
 
-	if (prev->sched_class != &fair_sched_class)
+
+	if (prev->sched_class != &fair_sched_class){
+		not_fair_counter++;
 		goto simple;
+	}
+
 	/*
 	 * Because of the set_next_buddy() in dequeue_task_fair() it is rather
 	 * likely that a next task is from the same cgroup as the current.
@@ -5417,8 +5426,11 @@ again:
 			 * Therefore the 'simple' nr_running test will indeed
 			 * be correct.
 			 */
-			if (unlikely(check_cfs_rq_runtime(cfs_rq)))
+			if (unlikely(check_cfs_rq_runtime(cfs_rq))){
+				throttle_counter++;
 				goto simple;
+			}
+
 		}
 
 		se = pick_next_entity(cfs_rq, curr);
@@ -5504,9 +5516,9 @@ again:
 //	printk(KERN_INFO "TASK FIFO DECISION F END task of %d flag=%d \n", p->pid, flag);
 	// =e
 	global_counter++;
-	if (global_counter % 5000 == 0){
+	if (global_counter % 50000 == 0){
 		int perce = (simple_counter / (simple_counter + global_counter)) * 100;
-		printk(KERN_INFO "normal=%d , simple=%d , percent=%d\n", global_counter, simple_counter, perce);
+		printk(KERN_INFO "normal=%d , simple=%d , idle=%d , not fair=%d ,throttle=%d \n", global_counter, simple_counter, idle_counter, not_fair_counter, throttle_counter);
 	}
 	//
 
