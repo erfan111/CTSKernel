@@ -41,7 +41,6 @@ static int global_counter = 0;
 static int simple_counter = 0;
 static int idle_counter = 0;
 static int not_fair_counter = 0;
-static int throttle_counter = 0;
 static u64 print_counter = 0;
 
 /*
@@ -5387,13 +5386,11 @@ again:
 #ifdef CONFIG_FAIR_GROUP_SCHED
 
 	if (!cfs_rq->nr_running){
-		idle_counter++;
 		goto idle;
 	}
 
 
 	if (prev->sched_class != &fair_sched_class){
-		not_fair_counter++;
 		goto simple;
 	}
 
@@ -5427,7 +5424,6 @@ again:
 			 * be correct.
 			 */
 			if (unlikely(check_cfs_rq_runtime(cfs_rq))){
-				throttle_counter++;
 				goto simple;
 			}
 
@@ -5514,13 +5510,7 @@ again:
 		hrtick_start_fair(rq, p);
 
 //	printk(KERN_INFO "TASK FIFO DECISION F END task of %d flag=%d \n", p->pid, flag);
-	// =e
-	global_counter++;
-	if (global_counter % 50000 == 0){
-		int perce = (simple_counter / (simple_counter + global_counter)) * 100;
-		printk(KERN_INFO "normal=%d , simple=%d , idle=%d , not fair=%d ,throttle=%d \n", global_counter, simple_counter, idle_counter, not_fair_counter, throttle_counter);
-	}
-	//
+
 
 	return p;
 simple:
@@ -5531,6 +5521,19 @@ simple:
 		goto idle;
 
 	put_prev_task(rq, prev);
+
+	// =e
+	global_counter++;
+	if (rq->nr_running == 1)
+		simple_counter++;
+	if (rq->nr_running > 2)
+		idle_counter++;
+	if (!rq->nr_running)
+		not_fair_counter++;
+	if (global_counter % 50000 == 0){
+		printk(KERN_INFO "1=%d , more=%d , less=%d\n", simple_counter, idle_counter, not_fair_counter);
+	}
+	//
 
 	do {
 		se = pick_next_entity(cfs_rq, NULL);
@@ -5569,7 +5572,6 @@ simple:
 
 	if (hrtick_enabled(rq))
 		hrtick_start_fair(rq, p);
-	simple_counter++;
 	return p;
 
 idle:
