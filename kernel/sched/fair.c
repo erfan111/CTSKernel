@@ -37,10 +37,10 @@
 
 #define print_each 1000
 #define threshold print_each * 1000
-static int global_counter = 0;
-static int simple_counter = 0;
-static int idle_counter = 0;
-static int not_fair_counter = 0;
+//static int global_counter = 0;
+//static int simple_counter = 0;
+//static int idle_counter = 0;
+//static int not_fair_counter = 0;
 static u64 print_counter = 0;
 
 /*
@@ -5523,16 +5523,16 @@ simple:
 	put_prev_task(rq, prev);
 
 	// =e
-	global_counter++;
-	if (rq->nr_running == 1)
-		simple_counter++;
-	if (rq->nr_running > 2)
-		idle_counter++;
-	if (!rq->nr_running)
-		not_fair_counter++;
-	if (global_counter % 50000 == 0){
-		printk(KERN_INFO "1=%d , more=%d , less=%d\n", simple_counter, idle_counter, not_fair_counter);
-	}
+//	global_counter++;
+//	if (rq->nr_running == 1)
+//		simple_counter++;
+//	if (rq->nr_running > 2)
+//		idle_counter++;
+//	if (!rq->nr_running)
+//		not_fair_counter++;
+//	if (global_counter % 50000 == 0){
+//		printk(KERN_INFO "1=%d , more=%d , less=%d\n", simple_counter, idle_counter, not_fair_counter);
+//	}
 	//
 
 	do {

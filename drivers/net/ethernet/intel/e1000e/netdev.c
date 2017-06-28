@@ -1038,7 +1038,7 @@ static bool e1000_clean_rx_irq(struct e1000_ring *rx_ring, int *work_done,
 
 		//Note(Afshin): Add time tag to recived packet
 		{
-			/*
+
 			int i;
 			printk("Afshin: Reception1======================================\n");
 			for(i = 0; i < skb->len - 5 + 1; i++)
@@ -1049,7 +1049,7 @@ static bool e1000_clean_rx_irq(struct e1000_ring *rx_ring, int *work_done,
 					printk("AGHAXIMOUS: %d %d\n ", i, skb->len);
 				}
 			}
-			*/
+
 			if(memcmp(skb->data + 66, "IUST:", 5) == 0) //&& skb->len >= 87)
 			{
 				//printk("inif\n");
@@ -1059,7 +1059,7 @@ static bool e1000_clean_rx_irq(struct e1000_ring *rx_ring, int *work_done,
 				skb->ip_summed = CHECKSUM_UNNECESSARY;
 				adapter->hw_csum_good++;
 			}
-			else if(memcmp(skb->data + 54, "IUST:", 5) == 0 && skb->len >= 75)
+			else if(memcmp(skb->data + 54, "IUST:", 5) == 0 )//&& skb->len >= 75)
 			{
 				printk("else\n");
 				struct timeval tv;
