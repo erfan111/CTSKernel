@@ -1039,16 +1039,16 @@ static bool e1000_clean_rx_irq(struct e1000_ring *rx_ring, int *work_done,
 		//Note(Afshin): Add time tag to recived packet
 		{
 
-			int i;
-			printk("Afshin: Reception1======================================\n");
-			for(i = 0; i < skb->len - 5 + 1; i++)
-			{
-				//printk("%02x ", skb->data[i]);
-				if(memcmp(skb->data + i, "IUST:", 5) == 0)
-				{
-					printk("AGHAXIMOUS: %d %d\n ", i, skb->len);
-				}
-			}
+//			int i;
+//			printk("Afshin: Reception1======================================\n");
+//			for(i = 0; i < skb->len - 5 + 1; i++)
+//			{
+//				//printk("%02x ", skb->data[i]);
+//				if(memcmp(skb->data + i, "IUST:", 5) == 0)
+//				{
+//					printk("AGHAXIMOUS: %d %d\n ", i, skb->len);
+//				}
+//			}
 
 			if(memcmp(skb->data + 66, "IUST:", 5) == 0) //&& skb->len >= 87)
 			{
@@ -1059,12 +1059,12 @@ static bool e1000_clean_rx_irq(struct e1000_ring *rx_ring, int *work_done,
 				skb->ip_summed = CHECKSUM_UNNECESSARY;
 				adapter->hw_csum_good++;
 			}
-			else if(memcmp(skb->data + 54, "IUST:", 5) == 0 )//&& skb->len >= 75)
+			else if(memcmp(skb->data + 42, "IUST:", 5) == 0 )//&& skb->len >= 75)
 			{
 				printk("else\n");
 				struct timeval tv;
 				do_gettimeofday(&tv);
-				memcpy(skb->data + 59, &tv, sizeof(tv));
+				memcpy(skb->data + 47, &tv, sizeof(tv));
 				skb->ip_summed = CHECKSUM_UNNECESSARY;
 				adapter->hw_csum_good++;
 			}
@@ -5768,30 +5768,17 @@ static netdev_tx_t e1000_xmit_frame(struct sk_buff *skb,
 		*/
 		if(memcmp(skb->data + 66, "IUST:", 5) == 0) //&& skb->len >= 103)
 		{
-			//struct timeval recivedTime, sendtime;
-			//char diffStr[16];
-			//long int diff;
+
 			struct timeval sendtime;
-			//printk("tif\n");
 			do_gettimeofday(&sendtime);
-			//memcpy(&recivedTime, skb->data + 71, sizeof(recivedTime));
-			//diff = ((sendtime.tv_sec - recivedTime.tv_sec) * 1000000L + sendtime.tv_usec) - recivedTime.tv_usec;
-			//printk("diff %ld\n", diff);
-			//sprintf(diffStr, "diff:%ld", diff);
-			//memcpy(skb->data + 71, diffStr, sizeof(diffStr));
 			memcpy(skb->data + 87, &sendtime, sizeof(sendtime));
 		}
-		else if(memcmp(skb->data + 54, "IUST:", 5) == 0 && skb->len >= 75)
+		else if(memcmp(skb->data + 42, "IUST:", 5) == 0) // && skb->len >= 75)
 		{
-			struct timeval recivedTime, sendtime;
-			char diffStr[16];
-			long int diff;
-			printk("telse\n");
+			struct timeval sendtime;
+			printk("else trans\n");
 			do_gettimeofday(&sendtime);
-			memcpy(&recivedTime, skb->data + 59, sizeof(recivedTime));
-			diff = ((sendtime.tv_sec - recivedTime.tv_sec) * 1000000L + sendtime.tv_usec) - recivedTime.tv_usec;
-			sprintf(diffStr, "diff:%ld", diff);
-			memcpy(skb->data + 59, diffStr, sizeof(diffStr));
+			memcpy(skb->data + 63, &sendtime, sizeof(sendtime));
 		}
 	}
 
