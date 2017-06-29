@@ -1061,7 +1061,7 @@ static bool e1000_clean_rx_irq(struct e1000_ring *rx_ring, int *work_done,
 			}
 			else if(memcmp(skb->data + 42, "IUST:", 5) == 0 )//&& skb->len >= 75)
 			{
-				printk("else\n");
+//				printk("else\n");
 				struct timeval tv;
 				do_gettimeofday(&tv);
 				memcpy(skb->data + 47, &tv, sizeof(tv));
@@ -5776,7 +5776,7 @@ static netdev_tx_t e1000_xmit_frame(struct sk_buff *skb,
 		else if(memcmp(skb->data + 42, "IUST:", 5) == 0) // && skb->len >= 75)
 		{
 			struct timeval sendtime;
-			printk("else trans\n");
+//			printk("else trans\n");
 			do_gettimeofday(&sendtime);
 			memcpy(skb->data + 63, &sendtime, sizeof(sendtime));
 		}

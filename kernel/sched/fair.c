@@ -3342,7 +3342,7 @@ static void put_prev_entity(struct cfs_rq *cfs_rq, struct sched_entity *prev)
 			/*
 			 * FIFO Measurement
 			 */
-				prev->disorder_tag[this_cpu] = prev_parent_se->disorder_counter[this_cpu]++;
+//				prev->disorder_tag[this_cpu] = prev_parent_se->disorder_counter[this_cpu]++;
 			//
 		}
 		//
@@ -4264,7 +4264,7 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 				/*
 				 * FIFO Measurement
 				 */
-				se->disorder_tag[cpu] = parent_se->disorder_counter[cpu]++;
+//				se->disorder_tag[cpu] = parent_se->disorder_counter[cpu]++;
 				//
 			}
 		}
@@ -5471,10 +5471,10 @@ again:
 ////				,parent_se->disorder_aggregate[cpu]);
 //	}
 
-	if(print_counter >= threshold)
-		print_counter = 0;
-
-	print_counter++;
+//	if(print_counter >= threshold)
+//		print_counter = 0;
+//
+//	print_counter++;
 	//printk(KERN_INFO "%d %d\n", print_counter, print_each);
 	//
 
@@ -5585,11 +5585,11 @@ idle:
 	// =aghax
 	/*
 	 * FIFO Measurement
-	 */
-	if(print_counter >= threshold)
-		print_counter = 0;
-
-	print_counter++;
+//	 */
+//	if(print_counter >= threshold)
+//		print_counter = 0;
+//
+//	print_counter++;
 	//
 
 
