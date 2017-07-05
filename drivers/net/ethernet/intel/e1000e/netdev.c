@@ -1039,35 +1039,33 @@ static bool e1000_clean_rx_irq(struct e1000_ring *rx_ring, int *work_done,
 		//Note(Afshin): Add time tag to recived packet
 		{
 
-//			int i;
-//			printk("Afshin: Reception1======================================\n");
-//			for(i = 0; i < skb->len - 5 + 1; i++)
-//			{
-//				//printk("%02x ", skb->data[i]);
-//				if(memcmp(skb->data + i, "IUST:", 5) == 0)
-//				{
-//					printk("AGHAXIMOUS: %d %d\n ", i, skb->len);
-//				}
-//			}
+			int i;
+			printk("Afshin: Reception1======================================\n");
+			for(i = 0; i < skb->len - 5 + 1; i++)
+			{
+				//printk("%02x ", skb->data[i]);
+				if(memcmp(skb->data + i, "IUST:", 5) == 0)
+				{
+					printk("AGHAXIMOUS: %d %d\n ", i, skb->len);
+				}
+			}
 
-			if(memcmp(skb->data + 66, "IUST:", 5) == 0) //&& skb->len >= 87)
-			{
-				//printk("inif\n");
-				struct timeval tv;
-				do_gettimeofday(&tv);
-				memcpy(skb->data + 71, &tv, sizeof(tv));
-				skb->ip_summed = CHECKSUM_UNNECESSARY;
-				adapter->hw_csum_good++;
-			}
-			else if(memcmp(skb->data + 42, "IUST:", 5) == 0 )//&& skb->len >= 75)
-			{
-//				printk("else\n");
-				struct timeval tv;
-				do_gettimeofday(&tv);
-				memcpy(skb->data + 47, &tv, sizeof(tv));
-				skb->ip_summed = CHECKSUM_UNNECESSARY;
-				adapter->hw_csum_good++;
-			}
+//			if(memcmp(skb->data + 66, "IUST:", 5) == 0) //&& skb->len >= 87)
+//			{
+//				struct timeval tv;
+//				do_gettimeofday(&tv);
+//				memcpy(skb->data + 71, &tv, sizeof(tv));
+//				skb->ip_summed = CHECKSUM_UNNECESSARY;
+//				adapter->hw_csum_good++;
+//			}
+//			else if(memcmp(skb->data + 42, "IUST:", 5) == 0 )//&& skb->len >= 75)
+//			{
+//				struct timeval tv;
+//				do_gettimeofday(&tv);
+//				memcpy(skb->data + 47, &tv, sizeof(tv));
+//				skb->ip_summed = CHECKSUM_UNNECESSARY;
+//				adapter->hw_csum_good++;
+//			}
 		}
 
 
@@ -5766,20 +5764,18 @@ static netdev_tx_t e1000_xmit_frame(struct sk_buff *skb,
 			printk("%02x ", skb->data[i]);
 		printk("\n");
 		*/
-		if(memcmp(skb->data + 66, "IUST:", 5) == 0) //&& skb->len >= 103)
-		{
-
-			struct timeval sendtime;
-			do_gettimeofday(&sendtime);
-			memcpy(skb->data + 87, &sendtime, sizeof(sendtime));
-		}
-		else if(memcmp(skb->data + 42, "IUST:", 5) == 0) // && skb->len >= 75)
-		{
-			struct timeval sendtime;
-//			printk("else trans\n");
-			do_gettimeofday(&sendtime);
-			memcpy(skb->data + 63, &sendtime, sizeof(sendtime));
-		}
+//		if(memcmp(skb->data + 66, "IUST:", 5) == 0) //&& skb->len >= 103)
+//		{
+//			struct timeval sendtime;
+//			do_gettimeofday(&sendtime);
+//			memcpy(skb->data + 87, &sendtime, sizeof(sendtime));
+//		}
+//		else if(memcmp(skb->data + 42, "IUST:", 5) == 0) // && skb->len >= 75)
+//		{
+//			struct timeval sendtime;
+//			do_gettimeofday(&sendtime);
+//			memcpy(skb->data + 63, &sendtime, sizeof(sendtime));
+//		}
 	}
 
 	/* The minimum packet size with TCTL.PSP set is 17 bytes so
