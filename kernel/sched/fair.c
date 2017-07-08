@@ -5532,7 +5532,7 @@ simple:
 //	if (!rq->nr_running)
 //		not_fair_counter++;
 	if (global_counter % 50000 == 0){
-		printk(KERN_INFO "main=%d , idle=%d , simple=%d\n", global_counter, idle_counter, idle_counter);
+		printk(KERN_INFO "main=%d , idle=%d , simple=%d\n", global_counter, idle_counter, simple_counter);
 	}
 	//
 
