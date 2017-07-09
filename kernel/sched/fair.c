@@ -37,11 +37,11 @@
 
 #define print_each 1000
 #define threshold print_each * 1000
-static int zero_counter = 0;
-static int one_counter = 0;
-static int two_counter = 0;
-static int three_counter = 0;
-static int four_counter = 0;
+//static int zero_counter = 0;
+//static int one_counter = 0;
+//static int two_counter = 0;
+//static int three_counter = 0;
+//static int four_counter = 0;
 //static u64 print_counter = 0;
 
 /*
@@ -5377,7 +5377,7 @@ pick_next_task_fair(struct rq *rq, struct task_struct *prev)
 	struct task_struct *p;
 	// =e
 	struct sched_entity * fifo_selected_se = NULL;
-	struct sched_entity * parent_se;
+	struct sched_entity * parent_se, *temp_se;
 	int flag = 0;
 	int cpu = rq->cpu;
 	//
@@ -5518,62 +5518,62 @@ simple:
 	cfs_rq = &rq->cfs;
 #endif
 
-	if (!cfs_rq->nr_running){
-		zero_counter++;
+	if (!cfs_rq->nr_running)
 		goto idle;
-	}
 
 	put_prev_task(rq, prev);
 
 	// =e
-	if (rq->nr_running == 1)
-		one_counter++;
-	if (rq->nr_running == 2)
-		two_counter++;
-	if (rq->nr_running == 3)
-		three_counter++;
-	if (rq->nr_running == 4)
-		three_counter++;
-	if ((one_counter+two_counter) % 30000 == 0){
-		printk(KERN_INFO "zero=%d , one=%d , two=%d , three=%d , four=%d \n",
-				zero_counter, one_counter, two_counter, three_counter, four_counter);
-	}
+//	if (rq->nr_running == 1)
+//		one_counter++;
+//	if (rq->nr_running == 2)
+//		two_counter++;
+//	if (rq->nr_running == 3)
+//		three_counter++;
+//	if (rq->nr_running == 4)
+//		three_counter++;
+//	if ((one_counter+two_counter) % 30000 == 0){
+//		printk(KERN_INFO "zero=%d , one=%d , two=%d , three=%d , four=%d \n",
+//				zero_counter, one_counter, two_counter, three_counter, four_counter);
+//	}
 	//
 
 	do {
 		se = pick_next_entity(cfs_rq, NULL);
-		set_next_entity(cfs_rq, se);
+		//set_next_entity(cfs_rq, se);
 		cfs_rq = group_cfs_rq(se);
 	} while (cfs_rq);
 
 
-	// =aghax
-	/*
-	 * FIFO Measurements
-	 */
-//	parent_se = se->real_parent;
-//	if(parent_se) {
-//		if(se->disorder_tag[cpu] < parent_se->last_disorder[cpu] ) {
-//			parent_se->disorder_aggregate[cpu]++;
-//		}
-//		parent_se->last_disorder[cpu] = se->disorder_tag[cpu];
-//	}
-//
-//	if(parent_se &&  print_counter < print_each)
-//	{
-//		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
-//				,parent_se->disorder_aggregate[cpu]);
-//	}
-//
-//	if(print_counter >= threshold)
-//		print_counter = 0;
-//
-//	print_counter++;
-	//
+	// =e
+//	printk("00000000000\n");
 
+	if(!se)
+		printk("FUCKED UP SE\n");
+	parent_se = se->real_parent;
+	if(parent_se && parent_se->children_size[cpu]){
+		flag = 1;
+		fifo_selected_se = list_first_entry(&parent_se->children[cpu], struct sched_entity, node);
+		if(fifo_selected_se && fifo_selected_se != se){
+			swap(fifo_selected_se->vruntime, se->vruntime); // We shoud play with this line for switching between default and improved mode
+			se = fifo_selected_se;  // We shoud play with this line for switching between default and improved mode
+			flag = 2;
+		}
+	}
+	if(!se)
+		printk("FUCKED UP SE2\n");
+	temp_se = se;
+	for_each_sched_entity(temp_se){
+//		printk("1111111111111111\n");
+		cfs_rq = cfs_rq_of(temp_se);
+		set_next_entity(cfs_rq, temp_se);
+	}
+	//
+//	printk("22222222222\n");
 
 
 	p = task_of(se);
+//	printk("33333333333\n");
 
 	if (hrtick_enabled(rq))
 		hrtick_start_fair(rq, p);
