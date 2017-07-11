@@ -5531,13 +5531,13 @@ simple:
 		}
 		parent_se->last_disorder[cpu] = se->disorder_tag[cpu];
 	}
-
+/*
 	if(parent_se &&  print_counter < print_each)
 	{
 		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
 				,parent_se->disorder_aggregate[cpu]);
 	}
-
+*/
 	if(print_counter >= threshold)
 		print_counter = 0;
 
