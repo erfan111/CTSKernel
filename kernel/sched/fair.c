@@ -5373,7 +5373,7 @@ pick_next_task_fair(struct rq *rq, struct task_struct *prev)
 	struct task_struct *p;
 	// =e
 	struct sched_entity * fifo_selected_se = NULL;
-	struct sched_entity * parent_se;
+	struct sched_entity *parent_se, *temp_se;
 	int flag = 0;
 	int cpu = rq->cpu;
 	//
@@ -5505,7 +5505,7 @@ again:
 
 	return p;
 simple:
-	cfs_rq = &rq->cfs;
+cfs_rq = &rq->cfs;
 #endif
 
 	if (!cfs_rq->nr_running)
@@ -5515,42 +5515,34 @@ simple:
 
 	do {
 		se = pick_next_entity(cfs_rq, NULL);
-		set_next_entity(cfs_rq, se);
+		//set_next_entity(cfs_rq, se);
 		cfs_rq = group_cfs_rq(se);
 	} while (cfs_rq);
 
 
-	// =aghax
-	/*
-	 * FIFO Measurements
-	 */
+	// =e
+
 	parent_se = se->real_parent;
-	if(parent_se) {
-		if(se->disorder_tag[cpu] < parent_se->last_disorder[cpu] ) {
-			parent_se->disorder_aggregate[cpu]++;
+	if(parent_se && parent_se->children_size[cpu]){
+		flag = 1;
+		fifo_selected_se = list_first_entry(&parent_se->children[cpu], struct sched_entity, node);
+		if(fifo_selected_se && fifo_selected_se != se){
+			swap(fifo_selected_se->vruntime, se->vruntime); // We shoud play with this line for switching between default and improved mode
+			se = fifo_selected_se;  // We shoud play with this line for switching between default and improved mode
+			flag = 2;
 		}
-		parent_se->last_disorder[cpu] = se->disorder_tag[cpu];
 	}
-
-	if(parent_se &&  print_counter < print_each)
-	{
-		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
-				,parent_se->disorder_aggregate[cpu]);
+	temp_se = se;
+	for_each_sched_entity(temp_se){
+		cfs_rq = cfs_rq_of(temp_se);
+		set_next_entity(cfs_rq, temp_se);
 	}
-
-	if(print_counter >= threshold)
-		print_counter = 0;
-
-	print_counter++;
 	//
-
-
 
 	p = task_of(se);
 
 	if (hrtick_enabled(rq))
 		hrtick_start_fair(rq, p);
-
 	return p;
 
 idle:
