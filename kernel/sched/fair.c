@@ -3338,6 +3338,8 @@ static void put_prev_entity(struct cfs_rq *cfs_rq, struct sched_entity *prev)
 			prev_parent_se = prev->real_parent;
 			list_add_tail(&prev->node, &prev_parent_se->children[this_cpu]);
 			prev_parent_se->children_size[this_cpu]++;
+			prev->vruntime += prev->loaned_vruntime;	// add the vruntime that we decreased when we wanted to run it
+			prev->loaned_vruntime = 0;
 
 			// =aghax
 			/*
@@ -5440,10 +5442,10 @@ again:
 	parent_se = se->real_parent;
 	if(parent_se && parent_se->children_size[cpu]){
 		flag = 1;
-//		print_fifo(parent_se, se);
 		fifo_selected_se = list_first_entry(&parent_se->children[cpu], struct sched_entity, node);
 		if(fifo_selected_se && fifo_selected_se != se){
-			swap(fifo_selected_se->vruntime, se->vruntime); // We shoud play with this line for switching between default and improved mode
+			fifo_selected_se->loaned_vruntime = fifo_selected_se->vruntime - se->vruntime;
+			fifo_selected_se->vruntime = se->vruntime; // We shoud play with this line for switching between default and improved mode
 			se = fifo_selected_se;  // We shoud play with this line for switching between default and improved mode
 			flag = 2;
 		}
@@ -5546,34 +5548,24 @@ simple:
 
 
 	// =e
-//	printk("00000000000\n");
-
-	if(!se)
-		printk("FUCKED UP SE\n");
 	parent_se = se->real_parent;
 	if(parent_se && parent_se->children_size[cpu]){
 		flag = 1;
 		fifo_selected_se = list_first_entry(&parent_se->children[cpu], struct sched_entity, node);
 		if(fifo_selected_se && fifo_selected_se != se){
-			swap(fifo_selected_se->vruntime, se->vruntime); // We shoud play with this line for switching between default and improved mode
+			fifo_selected_se->loaned_vruntime = fifo_selected_se->vruntime - se->vruntime;
+			fifo_selected_se->vruntime = se->vruntime; // We shoud play with this line for switching between default and improved mode
 			se = fifo_selected_se;  // We shoud play with this line for switching between default and improved mode
 			flag = 2;
 		}
 	}
-	if(!se)
-		printk("FUCKED UP SE2\n");
 	temp_se = se;
 	for_each_sched_entity(temp_se){
-//		printk("1111111111111111\n");
 		cfs_rq = cfs_rq_of(temp_se);
 		set_next_entity(cfs_rq, temp_se);
 	}
 	//
-//	printk("22222222222\n");
-
-
 	p = task_of(se);
-//	printk("33333333333\n");
 
 	if (hrtick_enabled(rq))
 		hrtick_start_fair(rq, p);

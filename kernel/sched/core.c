@@ -2148,7 +2148,7 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 	//printk(KERN_INFO "__sched_fork initializing se %d\n", p->pid);
 	p->se.children = kmalloc(nr_cpu_ids* sizeof(struct list_head), GFP_KERNEL);
 	p->se.children_size = kzalloc(nr_cpu_ids* sizeof(int), GFP_KERNEL);
-
+	p->se.loaned_vruntime = 0;
 	// =aghax
 	/*
 	 * FIFO Measurement
