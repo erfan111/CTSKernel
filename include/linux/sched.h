@@ -1261,7 +1261,7 @@ struct sched_entity {
 	struct list_head *children;
 	struct list_head node;
 	int *children_size;
-//	int head_initialized;
+	u64 loaned_vruntime;
 	//
 
 	// =aghax

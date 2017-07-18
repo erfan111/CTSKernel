@@ -1588,6 +1588,19 @@ int tcp_v4_rcv(struct sk_buff *skb)
 	if (skb_checksum_init(skb, IPPROTO_TCP, inet_compute_pseudo))
 		goto csum_error;
 
+	// =afshin
+//	{
+//		int i;
+//		printk("Afshin: Reception1======================================\n");
+//		for(i = 0; i < skb->len - 5 + 1; i++)
+//		{
+//			//printk("%02x ", skb->data[i]);
+//			if(memcmp(skb->data + i, "IUST:", 5) == 0)
+//			{
+//				printk("AGHAXIMOUS_TCP: %d %d\n ", i, skb->len);
+//			}
+//		}
+//	}
 	th = tcp_hdr(skb);
 	iph = ip_hdr(skb);
 	/* This is tricky : We move IPCB at its correct location into TCP_SKB_CB()

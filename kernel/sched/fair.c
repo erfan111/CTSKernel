@@ -37,8 +37,12 @@
 
 #define print_each 1000
 #define threshold print_each * 1000
-
-static u64 print_counter = 0;
+//static int zero_counter = 0;
+//static int one_counter = 0;
+//static int two_counter = 0;
+//static int three_counter = 0;
+//static int four_counter = 0;
+//static u64 print_counter = 0;
 
 /*
  * Targeted preemption latency for CPU-bound tasks:
@@ -3334,12 +3338,14 @@ static void put_prev_entity(struct cfs_rq *cfs_rq, struct sched_entity *prev)
 			prev_parent_se = prev->real_parent;
 			list_add_tail(&prev->node, &prev_parent_se->children[this_cpu]);
 			prev_parent_se->children_size[this_cpu]++;
+			prev->vruntime += prev->loaned_vruntime;	// add the vruntime that we decreased when we wanted to run it
+			prev->loaned_vruntime = 0;
 
 			// =aghax
 			/*
 			 * FIFO Measurement
 			 */
-				prev->disorder_tag[this_cpu] = prev_parent_se->disorder_counter[this_cpu]++;
+//				prev->disorder_tag[this_cpu] = prev_parent_se->disorder_counter[this_cpu]++;
 			//
 		}
 		//
@@ -4261,7 +4267,7 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 				/*
 				 * FIFO Measurement
 				 */
-				se->disorder_tag[cpu] = parent_se->disorder_counter[cpu]++;
+//				se->disorder_tag[cpu] = parent_se->disorder_counter[cpu]++;
 				//
 			}
 		}
@@ -5382,11 +5388,15 @@ pick_next_task_fair(struct rq *rq, struct task_struct *prev)
 again:
 #ifdef CONFIG_FAIR_GROUP_SCHED
 
-	if (!cfs_rq->nr_running)
+	if (!cfs_rq->nr_running){
 		goto idle;
+	}
 
-	if (prev->sched_class != &fair_sched_class)
+
+	if (prev->sched_class != &fair_sched_class){
 		goto simple;
+	}
+
 	/*
 	 * Because of the set_next_buddy() in dequeue_task_fair() it is rather
 	 * likely that a next task is from the same cgroup as the current.
@@ -5416,8 +5426,10 @@ again:
 			 * Therefore the 'simple' nr_running test will indeed
 			 * be correct.
 			 */
-			if (unlikely(check_cfs_rq_runtime(cfs_rq)))
+			if (unlikely(check_cfs_rq_runtime(cfs_rq))){
 				goto simple;
+			}
+
 		}
 
 		se = pick_next_entity(cfs_rq, curr);
@@ -5430,10 +5442,10 @@ again:
 	parent_se = se->real_parent;
 	if(parent_se && parent_se->children_size[cpu]){
 		flag = 1;
-//		print_fifo(parent_se, se);
 		fifo_selected_se = list_first_entry(&parent_se->children[cpu], struct sched_entity, node);
 		if(fifo_selected_se && fifo_selected_se != se){
-			swap(fifo_selected_se->vruntime, se->vruntime); // We shoud play with this line for switching between default and improved mode
+			fifo_selected_se->loaned_vruntime = fifo_selected_se->vruntime - se->vruntime;
+			fifo_selected_se->vruntime = se->vruntime; // We shoud play with this line for switching between default and improved mode
 			se = fifo_selected_se;  // We shoud play with this line for switching between default and improved mode
 			flag = 2;
 		}
@@ -5442,10 +5454,10 @@ again:
 			/*
 			 * FIFO Measurements
 			 */
-			if(se->disorder_tag[cpu] < parent_se->last_disorder[cpu] ) {
-				parent_se->disorder_aggregate[cpu]++;
-			}
-			parent_se->last_disorder[cpu] = se->disorder_tag[cpu];
+//			if(se->disorder_tag[cpu] < parent_se->last_disorder[cpu] ) {
+//				parent_se->disorder_aggregate[cpu]++;
+//			}
+//			parent_se->last_disorder[cpu] = se->disorder_tag[cpu];
 			//
 	}
 	//
@@ -5456,16 +5468,16 @@ again:
 	/*
 	 * FIFO Measurements
 	 */
-	if(parent_se &&  print_counter < print_each)
-	{
-////		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
-//				,parent_se->disorder_aggregate[cpu]);
-	}
+//	if(parent_se &&  print_counter < print_each)
+//	{
+//////		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
+////				,parent_se->disorder_aggregate[cpu]);
+//	}
 
-	if(print_counter >= threshold)
-		print_counter = 0;
-
-	print_counter++;
+//	if(print_counter >= threshold)
+//		print_counter = 0;
+//
+//	print_counter++;
 	//printk(KERN_INFO "%d %d\n", print_counter, print_each);
 	//
 
@@ -5513,6 +5525,21 @@ cfs_rq = &rq->cfs;
 
 	put_prev_task(rq, prev);
 
+	// =e
+//	if (rq->nr_running == 1)
+//		one_counter++;
+//	if (rq->nr_running == 2)
+//		two_counter++;
+//	if (rq->nr_running == 3)
+//		three_counter++;
+//	if (rq->nr_running == 4)
+//		three_counter++;
+//	if ((one_counter+two_counter) % 30000 == 0){
+//		printk(KERN_INFO "zero=%d , one=%d , two=%d , three=%d , four=%d \n",
+//				zero_counter, one_counter, two_counter, three_counter, four_counter);
+//	}
+	//
+
 	do {
 		se = pick_next_entity(cfs_rq, NULL);
 		//set_next_entity(cfs_rq, se);
@@ -5521,25 +5548,23 @@ cfs_rq = &rq->cfs;
 
 
 	// =e
-
 	parent_se = se->real_parent;
 	if(parent_se && parent_se->children_size[cpu]){
 		flag = 1;
 		fifo_selected_se = list_first_entry(&parent_se->children[cpu], struct sched_entity, node);
 		if(fifo_selected_se && fifo_selected_se != se){
-			swap(fifo_selected_se->vruntime, se->vruntime); // We shoud play with this line for switching between default and improved mode
+			fifo_selected_se->loaned_vruntime = fifo_selected_se->vruntime - se->vruntime;
+			fifo_selected_se->vruntime = se->vruntime; // We shoud play with this line for switching between default and improved mode
 			se = fifo_selected_se;  // We shoud play with this line for switching between default and improved mode
 			flag = 2;
 		}
 	}
-
 	temp_se = se;
 	for_each_sched_entity(temp_se){
 		cfs_rq = cfs_rq_of(temp_se);
 		set_next_entity(cfs_rq, temp_se);
 	}
 	//
-
 	p = task_of(se);
 
 	if (hrtick_enabled(rq))
@@ -5557,11 +5582,10 @@ idle:
 	// =aghax
 	/*
 	 * FIFO Measurement
-	 */
-	if(print_counter >= threshold)
-		print_counter = 0;
-
-	print_counter++;
+//	 */
+//	if(print_counter >= threshold)
+//		print_counter = 0;
+//
 	//
 
 
