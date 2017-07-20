@@ -5444,9 +5444,9 @@ again:
 		flag = 1;
 		fifo_selected_se = list_first_entry(&parent_se->children[cpu], struct sched_entity, node);
 		if(fifo_selected_se && fifo_selected_se != se){
-			fifo_selected_se->loaned_vruntime = fifo_selected_se->vruntime - se->vruntime;
-			fifo_selected_se->vruntime = se->vruntime; // We shoud play with this line for switching between default and improved mode
-			se = fifo_selected_se;  // We shoud play with this line for switching between default and improved mode
+		//	fifo_selected_se->loaned_vruntime = fifo_selected_se->vruntime - se->vruntime;
+		//	fifo_selected_se->vruntime = se->vruntime; // We shoud play with this line for switching between default and improved mode
+		//	se = fifo_selected_se;  // We shoud play with this line for switching between default and improved mode
 			flag = 2;
 		}
 
@@ -5551,9 +5551,9 @@ cfs_rq = &rq->cfs;
 		flag = 1;
 		fifo_selected_se = list_first_entry(&parent_se->children[cpu], struct sched_entity, node);
 		if(fifo_selected_se && fifo_selected_se != se){
-			fifo_selected_se->loaned_vruntime = fifo_selected_se->vruntime - se->vruntime;
-			fifo_selected_se->vruntime = se->vruntime; // We shoud play with this line for switching between default and improved mode
-			se = fifo_selected_se;  // We shoud play with this line for switching between default and improved mode
+		//	fifo_selected_se->loaned_vruntime = fifo_selected_se->vruntime - se->vruntime;
+		//	fifo_selected_se->vruntime = se->vruntime; // We shoud play with this line for switching between default and improved mode
+		//	se = fifo_selected_se;  // We shoud play with this line for switching between default and improved mode
 			flag = 2;
 		}
 
