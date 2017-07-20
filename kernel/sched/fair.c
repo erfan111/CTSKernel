@@ -3314,6 +3314,9 @@ static void put_prev_entity(struct cfs_rq *cfs_rq, struct sched_entity *prev)
 	// =e
 	struct sched_entity *prev_parent_se;
 	int this_cpu = smp_processor_id();
+	// AGHAX
+	struct task_struct *p;
+	//
 	//
 	/*
 	 * If still on the runqueue then deactivate_task()
@@ -3345,7 +3348,19 @@ static void put_prev_entity(struct cfs_rq *cfs_rq, struct sched_entity *prev)
 			/*
 			 * FIFO Measurement
 			 */
-				prev->disorder_tag[this_cpu] = prev_parent_se->disorder_counter[this_cpu]++;
+			p = task_of(prev);
+			prev->disorder_tag[this_cpu] = prev_parent_se->disorder_counter[this_cpu]++;
+			if(print_counter < print_each)
+			{
+				printk(KERN_INFO "DISORDER AGGREGATE :----->ENQ  %d\n"
+						,p->pid);
+			}
+
+			if(print_counter >= threshold)
+				print_counter = 0;
+
+			print_counter++;
+
 			//
 		}
 		//
@@ -4268,6 +4283,17 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 				 * FIFO Measurement
 				 */
 				se->disorder_tag[cpu] = parent_se->disorder_counter[cpu]++;
+
+				if(print_counter < print_each)
+				{
+					printk(KERN_INFO "DISORDER AGGREGATE :----->ENQ  %d\n"
+							,p->pid);
+				}
+
+				if(print_counter >= threshold)
+					print_counter = 0;
+
+				print_counter++;
 				//
 			}
 		}
@@ -5470,8 +5496,8 @@ again:
 	 */
 	if(parent_se &&  print_counter < print_each)
 	{
-		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
-				,parent_se->disorder_aggregate[cpu]);
+		printk(KERN_INFO "DISORDER AGGREGATE :----->SEL  %d\n"
+				,p->pid);
 	}
 
 	if(print_counter >= threshold)
@@ -5576,6 +5602,22 @@ cfs_rq = &rq->cfs;
 
 	//
 	p = task_of(se);
+
+	// =aghax
+	/*
+	 * FIFO Measurements
+	 */
+	if(parent_se &&  print_counter < print_each)
+	{
+		printk(KERN_INFO "DISORDER AGGREGATE :----->SEL  %d\n"
+				,p->pid);
+	}
+
+	if(print_counter >= threshold)
+		print_counter = 0;
+
+	print_counter++;
+	//
 
 	if (hrtick_enabled(rq))
 		hrtick_start_fair(rq, p);
