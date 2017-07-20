@@ -36,13 +36,13 @@
 #include "sched.h"
 
 #define print_each 1000
-#define threshold print_each * 1000
+#define threshold print_each * 10000
 //static int zero_counter = 0;
 //static int one_counter = 0;
 //static int two_counter = 0;
 //static int three_counter = 0;
 //static int four_counter = 0;
-//static u64 print_counter = 0;
+static u64 print_counter = 0;
 
 /*
  * Targeted preemption latency for CPU-bound tasks:
@@ -3345,7 +3345,7 @@ static void put_prev_entity(struct cfs_rq *cfs_rq, struct sched_entity *prev)
 			/*
 			 * FIFO Measurement
 			 */
-//				prev->disorder_tag[this_cpu] = prev_parent_se->disorder_counter[this_cpu]++;
+				prev->disorder_tag[this_cpu] = prev_parent_se->disorder_counter[this_cpu]++;
 			//
 		}
 		//
@@ -4267,7 +4267,7 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 				/*
 				 * FIFO Measurement
 				 */
-//				se->disorder_tag[cpu] = parent_se->disorder_counter[cpu]++;
+				se->disorder_tag[cpu] = parent_se->disorder_counter[cpu]++;
 				//
 			}
 		}
@@ -5454,10 +5454,10 @@ again:
 			/*
 			 * FIFO Measurements
 			 */
-//			if(se->disorder_tag[cpu] < parent_se->last_disorder[cpu] ) {
-//				parent_se->disorder_aggregate[cpu]++;
-//			}
-//			parent_se->last_disorder[cpu] = se->disorder_tag[cpu];
+			if(se->disorder_tag[cpu] < parent_se->last_disorder[cpu] ) {
+				parent_se->disorder_aggregate[cpu]++;
+			}
+			parent_se->last_disorder[cpu] = se->disorder_tag[cpu];
 			//
 	}
 	//
@@ -5468,17 +5468,16 @@ again:
 	/*
 	 * FIFO Measurements
 	 */
-//	if(parent_se &&  print_counter < print_each)
-//	{
-//////		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
-////				,parent_se->disorder_aggregate[cpu]);
-//	}
+	if(parent_se &&  print_counter < print_each)
+	{
+		printk(KERN_INFO "DISORDER AGGREGATE :----->  %llu\n"
+				,parent_se->disorder_aggregate[cpu]);
+	}
 
-//	if(print_counter >= threshold)
-//		print_counter = 0;
-//
-//	print_counter++;
-	//printk(KERN_INFO "%d %d\n", print_counter, print_each);
+	if(print_counter >= threshold)
+		print_counter = 0;
+
+	print_counter++;
 	//
 
 	/*
@@ -5512,7 +5511,6 @@ again:
 	if (hrtick_enabled(rq))
 		hrtick_start_fair(rq, p);
 
-//	printk(KERN_INFO "TASK FIFO DECISION F END task of %d flag=%d \n", p->pid, flag);
 
 
 	return p;
@@ -5558,12 +5556,24 @@ cfs_rq = &rq->cfs;
 			se = fifo_selected_se;  // We shoud play with this line for switching between default and improved mode
 			flag = 2;
 		}
+
+			// =aghax
+			/*
+			 * FIFO Measurements
+			 */
+			if(se->disorder_tag[cpu] < parent_se->last_disorder[cpu] ) {
+				parent_se->disorder_aggregate[cpu]++;
+			}
+			parent_se->last_disorder[cpu] = se->disorder_tag[cpu];
+			//
+
 	}
 	temp_se = se;
 	for_each_sched_entity(temp_se){
 		cfs_rq = cfs_rq_of(temp_se);
 		set_next_entity(cfs_rq, temp_se);
 	}
+
 	//
 	p = task_of(se);
 
@@ -5583,8 +5593,8 @@ idle:
 	/*
 	 * FIFO Measurement
 //	 */
-//	if(print_counter >= threshold)
-//		print_counter = 0;
+	if(print_counter >= threshold)
+		print_counter = 0;
 //
 	//
 

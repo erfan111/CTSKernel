@@ -3241,26 +3241,6 @@ static void __sched notrace __schedule(bool preempt)
 		trace_sched_switch(preempt, prev, next);
 
 		rq = context_switch(rq, prev, next); /* unlocks the rq */
-//		printk(KERN_INFO "testing \n");
-
-		// aghax
-//		 if(cpu == 0)
-//		 {
-//		 	if(loop_counter > loop_limit)
-//		 	{
-//		 		printk(KERN_INFO "batch_report_start\n");
-//		 		for(loop_counter = 0; loop_counter < loop_limit; loop_counter++)
-//		 			printk(KERN_INFO "%d\n", FCFS[loop_counter]);
-//		 		printk(KERN_INFO "batch_report_end\n");
-//		 		loop_counter = 0;
-//		 	}
-//		 	if(next->pid > 0)
-//		 	{
-//		 		FCFS[loop_counter] = next->se.rank;//loop_counter;
-//		 		loop_counter++;
-//		 	}
-//		 }
-
 
 		cpu = cpu_of(rq);
 	} else {
