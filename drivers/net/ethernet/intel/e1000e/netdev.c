@@ -1,4 +1,4 @@
-/* Intel PRO/1000 Linux driver
+/* Intel PRO/1000 Linux driver /driver/net/ethernet/intel/e1000e/netdev.c
  * Copyright(c) 1999 - 2015 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -950,6 +950,7 @@ static bool e1000_clean_rx_irq(struct e1000_ring *rx_ring, int *work_done,
 		dma_rmb();	/* read descriptor and rx_buffer_info after status DD */
 
 		skb = buffer_info->skb;
+
 		buffer_info->skb = NULL;
 
 		prefetch(skb->data - NET_IP_ALIGN);
@@ -1033,6 +1034,52 @@ static bool e1000_clean_rx_irq(struct e1000_ring *rx_ring, int *work_done,
 		}
 		/* end copybreak code */
 		skb_put(skb, length);
+
+
+		//Note(Afshin): Add time tag to recived packet
+		{
+
+//			int i;
+//			printk("Afshin: Reception1======================================\n");
+//			for(i = 0; i < skb->len - 5 + 1; i++)
+//			{
+//				printk("%02x ", skb->data[i]);
+////				if(memcmp(skb->data + i, "IUST:", 5) == 0)
+////				{
+////					printk("AGHAXIMOUS: %d %d\n ", i, skb->len);
+////				}
+//			}
+
+			if(memcmp(skb->data + 66, "IUST:", 5) == 0) //&& skb->len >= 87)
+			{
+				//printk("inif\n");
+				struct timeval tv;
+				do_gettimeofday(&tv);
+				memcpy(skb->data + 71, &tv, sizeof(tv));
+				skb->ip_summed = CHECKSUM_UNNECESSARY;
+				adapter->hw_csum_good++;
+			}
+			else if(memcmp(skb->data + 54, "IUST:", 5) == 0 && skb->len >= 75)
+			{
+				//printk("else\n");
+				struct timeval tv;
+				do_gettimeofday(&tv);
+				memcpy(skb->data + 59, &tv, sizeof(tv));
+				skb->ip_summed = CHECKSUM_UNNECESSARY;
+				adapter->hw_csum_good++;
+			}
+			else if(memcmp(skb->data + 96, "IUST:", 5) == 0 && skb->len >= 75)  //thrift
+				{
+					//printk("else\n");
+					struct timeval tv;
+					do_gettimeofday(&tv);
+					memcpy(skb->data + 101, &tv, sizeof(tv));
+					skb->ip_summed = CHECKSUM_UNNECESSARY;
+					adapter->hw_csum_good++;
+				}
+		}
+
+
 
 		/* Receive Checksum Offload */
 		e1000_rx_checksum(adapter, staterr, skb);
@@ -5705,6 +5752,8 @@ static netdev_tx_t e1000_xmit_frame(struct sk_buff *skb,
 	int count = 0;
 	int tso;
 	unsigned int f;
+
+
 	__be16 protocol = vlan_get_protocol(skb);
 
 	if (test_bit(__E1000_DOWN, &adapter->state)) {
@@ -5715,6 +5764,50 @@ static netdev_tx_t e1000_xmit_frame(struct sk_buff *skb,
 	if (skb->len <= 0) {
 		dev_kfree_skb_any(skb);
 		return NETDEV_TX_OK;
+	}
+
+	//Note(Afshin): add passed time to send packet using recived time tag
+	{
+
+//		int i;
+//		printk("Afshin: Trasnmission======================================\n");
+//		for(i = 0; i < skb->len; i++)
+//			printk("%02x ", skb->data[i]);
+//		printk("\n");
+
+		if(memcmp(skb->data + 66, "IUST:", 5) == 0) //&& skb->len >= 103)
+		{
+			//struct timeval recivedTime, sendtime;
+			//char diffStr[16];
+			//long int diff;
+			struct timeval sendtime;
+			//printk("tif\n");
+			do_gettimeofday(&sendtime);
+			//memcpy(&recivedTime, skb->data + 71, sizeof(recivedTime));
+			//diff = ((sendtime.tv_sec - recivedTime.tv_sec) * 1000000L + sendtime.tv_usec) - recivedTime.tv_usec;
+			//printk("diff %ld\n", diff);
+			//sprintf(diffStr, "diff:%ld", diff);
+			//memcpy(skb->data + 71, diffStr, sizeof(diffStr));
+			memcpy(skb->data + 87, &sendtime, sizeof(sendtime));
+		}
+		else if(memcmp(skb->data + 54, "IUST:", 5) == 0 && skb->len >= 75)
+		{
+			struct timeval recivedTime, sendtime;
+			char diffStr[16];
+			long int diff;
+			//printk("telse\n");
+			do_gettimeofday(&sendtime);
+			memcpy(&recivedTime, skb->data + 59, sizeof(recivedTime));
+			diff = ((sendtime.tv_sec - recivedTime.tv_sec) * 1000000L + sendtime.tv_usec) - recivedTime.tv_usec;
+			sprintf(diffStr, "diff:%ld", diff);
+			memcpy(skb->data + 59, diffStr, sizeof(diffStr));
+		}
+		else if(memcmp(skb->data + 96, "IUST:", 5) == 0 && skb->len >= 75)  //thrift
+		{
+			struct timeval sendtime;
+			do_gettimeofday(&sendtime);
+			memcpy(skb->data + 117, &sendtime, sizeof(sendtime));
+		}
 	}
 
 	/* The minimum packet size with TCTL.PSP set is 17 bytes so
@@ -6926,6 +7019,8 @@ static int e1000_set_features(struct net_device *netdev,
 	}
 
 	netdev->features = features;
+	//Note(Afshin): add tag to calculate recived CRC via hardware
+	netdev->features |= NETIF_F_RXCSUM;
 
 	if (netif_running(netdev))
 		e1000e_reinit_locked(adapter);
