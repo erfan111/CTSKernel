@@ -1,29 +1,34 @@
-        Linux kernel release 4.x <http://kernel.org/>  
+Linux kernel release 4.x <http://kernel.org/> modified as part of the project:  
+*CTS: An Operating System CPU Scheduler to Mitigate Tail latency for Latency-sensitive Multi-threaded Applications*
+
+Find the paper here: [https://www.sciencedirect.com/science/article/pii/S0743731518302387](https://www.sciencedirect.com/science/article/pii/S0743731518302387)
+
+Authors note
+=====
 Kernel Version 4.4.71
---
-See the edited parts:  
-- include/linux/sched.h  
-- kernel/sched/sched.h  
-- kernel/sched/core.c  
-- kernel/sched/fair.c  
+----
+Find the modified sources:
+- include/linux/sched.h
+- kernel/sched/sched.h
+- kernel/sched/core.c
+- kernel/sched/fair.c
 
-NIC DRIVER: intel e1000e  
+The kernel aims to mitigate the tail latency of multithreded applications when facing high input load by
+scheduling the threads of the parent process in FCFS manner, without messing with the features of the Linux Completely Fair Scheduler.
 
-Changes related to the FIFO Scheduler are to be found using ***`=e`***   in comment
-Changes related to the disorder counter are to be found using ***`aghax`*** in comment  
+Notes:
+----
+- Ethernet DRIVER that is modified for NIC-to-NIC timestamping: intel e1000e
+- Changes related to the FIFO Scheduler are to be found using **=e**   in comment
+- Changes related to the disorder counter are to be found using **aghax** in comment  
 
-branches of code:  
-1. master:  Main FIFO+CFS Scheduler code  
-
-
-
-
+**Compile and run like original kernels.**
 
 
 -------------------------------------
 These are the release notes for Linux version 4.  Read them carefully,
 as they tell you what this is all about, explain how to install the
-kernel, and what to do if something goes wrong. 
+kernel, and what to do if something goes wrong.
 
 WHAT IS LINUX?
 
@@ -37,7 +42,7 @@ WHAT IS LINUX?
   and multistack networking including IPv4 and IPv6.
 
   It is distributed under the GNU General Public License - see the
-  accompanying COPYING file for more details. 
+  accompanying COPYING file for more details.
 
 ON WHAT HARDWARE DOES IT RUN?
 
@@ -65,7 +70,7 @@ DOCUMENTATION:
    system: there are much better sources available.
 
  - There are various README files in the Documentation/ subdirectory:
-   these typically contain kernel-specific installation notes for some 
+   these typically contain kernel-specific installation notes for some
    drivers for example. See Documentation/00-INDEX for a list of what
    is contained in each file.  Please read the Changes file, as it
    contains information about the problems, which may result by upgrading
@@ -297,7 +302,7 @@ COMPILING the kernel:
    To have the build system also tell the reason for the rebuild of each
    target, use "V=2".  The default is "V=0".
 
- - Keep a backup kernel handy in case something goes wrong.  This is 
+ - Keep a backup kernel handy in case something goes wrong.  This is
    especially true for the development releases, since each new release
    contains new code which has not been debugged.  Make sure you keep a
    backup of the modules corresponding to that kernel, as well.  If you
@@ -311,7 +316,7 @@ COMPILING the kernel:
 
  - In order to boot your new kernel, you'll need to copy the kernel
    image (e.g. .../linux/arch/i386/boot/bzImage after compilation)
-   to the place where your regular bootable kernel is found. 
+   to the place where your regular bootable kernel is found.
 
  - Booting a kernel directly from a floppy without the assistance of a
    bootloader such as LILO, is no longer supported.
@@ -324,10 +329,10 @@ COMPILING the kernel:
    to update the loading map!! If you don't, you won't be able to boot
    the new kernel image.
 
-   Reinstalling LILO is usually a matter of running /sbin/lilo. 
+   Reinstalling LILO is usually a matter of running /sbin/lilo.
    You may wish to edit /etc/lilo.conf to specify an entry for your
    old kernel image (say, /vmlinux.old) in case the new one does not
-   work.  See the LILO docs for more information. 
+   work.  See the LILO docs for more information.
 
    After reinstalling LILO, you should be all set.  Shutdown the system,
    reboot, and enjoy!
@@ -335,9 +340,9 @@ COMPILING the kernel:
    If you ever need to change the default root device, video mode,
    ramdisk size, etc.  in the kernel image, use the 'rdev' program (or
    alternatively the LILO boot options when appropriate).  No need to
-   recompile the kernel to change these parameters. 
+   recompile the kernel to change these parameters.
 
- - Reboot with the new kernel and enjoy. 
+ - Reboot with the new kernel and enjoy.
 
 IF SOMETHING GOES WRONG:
 
@@ -404,7 +409,7 @@ IF SOMETHING GOES WRONG:
    is followed by a function with a higher address you will find the one
    you want.  In fact, it may be a good idea to include a bit of
    "context" in your problem report, giving a few lines around the
-   interesting one. 
+   interesting one.
 
    If you for some reason cannot do the above (you have a pre-compiled
    kernel image or similar), telling me as much about your setup as
@@ -422,4 +427,3 @@ IF SOMETHING GOES WRONG:
 
    gdb'ing a non-running kernel currently fails because gdb (wrongly)
    disregards the starting offset for which the kernel is compiled.
-
